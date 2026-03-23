@@ -416,6 +416,66 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
     .image-edit-buttons button:hover {
       opacity: 0.9;
     }
+    /* Slash command menu */
+    .slash-command-menu {
+      background: var(--vscode-menu-background, #252526);
+      border: 1px solid var(--vscode-menu-border, #454545);
+      border-radius: 6px;
+      padding: 4px 0;
+      min-width: 220px;
+      max-height: 300px;
+      overflow-y: auto;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+    .slash-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      background: transparent;
+      border: none;
+      color: var(--vscode-menu-foreground, #ccc);
+      padding: 6px 12px;
+      text-align: left;
+      font-size: 13px;
+      font-family: inherit;
+      cursor: pointer;
+      line-height: 1.4;
+    }
+    .slash-menu-item:hover,
+    .slash-menu-item.selected {
+      background: var(--vscode-menu-selectionBackground, #094771);
+      color: var(--vscode-menu-selectionForeground, #fff);
+    }
+    .slash-menu-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 4px;
+      background: var(--vscode-badge-background, rgba(128, 128, 128, 0.2));
+      color: var(--vscode-badge-foreground, #ccc);
+      font-size: 12px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    .slash-menu-item.selected .slash-menu-icon,
+    .slash-menu-item:hover .slash-menu-icon {
+      background: rgba(255, 255, 255, 0.15);
+    }
+    .slash-menu-text {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+    .slash-menu-label {
+      font-weight: 500;
+    }
+    .slash-menu-description {
+      font-size: 11px;
+      opacity: 0.7;
+    }
   </style>
 </head>
 <body>

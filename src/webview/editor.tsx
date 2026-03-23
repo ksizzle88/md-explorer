@@ -53,6 +53,13 @@ import {
   $getSelection,
   $isRangeSelection,
   COMMAND_PRIORITY_LOW,
+  COMMAND_PRIORITY_HIGH,
+  KEY_ARROW_DOWN_COMMAND,
+  KEY_ARROW_UP_COMMAND,
+  KEY_ENTER_COMMAND,
+  KEY_ESCAPE_COMMAND,
+  TextNode,
+  $isTextNode,
 } from "lexical";
 
 import {
@@ -743,6 +750,388 @@ function TableContextMenuPlugin() {
   );
 }
 
+// ── Slash Command Menu Plugin ─────────────────────────────────────
+
+interface SlashCommandItem {
+  label: string;
+  description: string;
+  icon: string;
+  keywords: string[];
+  action: (editor: any) => void;
+}
+
+const SLASH_COMMANDS: SlashCommandItem[] = [
+  {
+    label: "Heading 1",
+    description: "Large heading",
+    icon: "H1",
+    keywords: ["heading", "h1", "title"],
+    action: (editor) => {
+      editor.update(() => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          $setBlocksType(selection, () => $createHeadingNode("h1"));
+        }
+      });
+    },
+  },
+  {
+    label: "Heading 2",
+    description: "Medium heading",
+    icon: "H2",
+    keywords: ["heading", "h2", "subtitle"],
+    action: (editor) => {
+      editor.update(() => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          $setBlocksType(selection, () => $createHeadingNode("h2"));
+        }
+      });
+    },
+  },
+  {
+    label: "Heading 3",
+    description: "Small heading",
+    icon: "H3",
+    keywords: ["heading", "h3"],
+    action: (editor) => {
+      editor.update(() => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          $setBlocksType(selection, () => $createHeadingNode("h3"));
+        }
+      });
+    },
+  },
+  {
+    label: "Bullet List",
+    description: "Unordered list",
+    icon: "•",
+    keywords: ["bullet", "unordered", "list", "ul"],
+    action: (editor) => {
+      editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined);
+    },
+  },
+  {
+    label: "Numbered List",
+    description: "Ordered list",
+    icon: "1.",
+    keywords: ["numbered", "ordered", "list", "ol"],
+    action: (editor) => {
+      editor.dispatchCommand(INSERT_ORDERED_LIST_COMMAND, undefined);
+    },
+  },
+  {
+    label: "Table",
+    description: "Insert a 3×3 table",
+    icon: "⊞",
+    keywords: ["table", "grid"],
+    action: (editor) => {
+      editor.update(() => {
+        const tableNode = $createTableNodeWithDimensions(3, 3, true);
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          const anchor = selection.anchor.getNode();
+          const topLevel =
+            anchor.getKey() === "root"
+              ? anchor
+              : anchor.getTopLevelElementOrThrow();
+          if (topLevel && topLevel.getKey() !== "root") {
+            topLevel.insertAfter(tableNode);
+          } else {
+            $getRoot().append(tableNode);
+          }
+        }
+      });
+    },
+  },
+  {
+    label: "Code Block",
+    description: "Fenced code block",
+    icon: "{ }",
+    keywords: ["code", "codeblock", "fenced", "pre"],
+    action: (editor) => {
+      editor.update(() => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          $setBlocksType(selection, () => $createCodeNode());
+        }
+      });
+    },
+  },
+  {
+    label: "Quote",
+    description: "Block quote",
+    icon: "❝",
+    keywords: ["quote", "blockquote", "callout"],
+    action: (editor) => {
+      editor.update(() => {
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          $setBlocksType(selection, () => $createQuoteNode());
+        }
+      });
+    },
+  },
+  {
+    label: "Horizontal Rule",
+    description: "Divider line",
+    icon: "―",
+    keywords: ["horizontal", "rule", "divider", "hr", "line"],
+    action: (editor) => {
+      editor.dispatchCommand(INSERT_HORIZONTAL_RULE_COMMAND, undefined);
+    },
+  },
+  {
+    label: "Image",
+    description: "Insert an image from URL",
+    icon: "🖼",
+    keywords: ["image", "picture", "img", "photo"],
+    action: (editor) => {
+      const url = prompt("Enter image URL:");
+      if (!url) return;
+      const alt = prompt("Enter alt text (optional):") || "";
+      editor.update(() => {
+        const imageNode = $createImageNode(url, alt);
+        const selection = $getSelection();
+        if ($isRangeSelection(selection)) {
+          const anchor = selection.anchor.getNode();
+          const topLevel =
+            anchor.getKey() === "root"
+              ? anchor
+              : anchor.getTopLevelElementOrThrow();
+          if (topLevel && topLevel.getKey() !== "root") {
+            topLevel.insertAfter(imageNode);
+          } else {
+            $getRoot().append(imageNode);
+          }
+        }
+      });
+    },
+  },
+];
+
+function SlashCommandPlugin() {
+  const [editor] = useLexicalComposerContext();
+  const [isOpen, setIsOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [menuPosition, setMenuPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const menuRef = useRef<HTMLDivElement>(null);
+  const slashNodeKeyRef = useRef<string | null>(null);
+
+  const filteredItems = SLASH_COMMANDS.filter((item) => {
+    if (!query) return true;
+    const q = query.toLowerCase();
+    return (
+      item.label.toLowerCase().includes(q) ||
+      item.keywords.some((kw) => kw.includes(q))
+    );
+  });
+
+  // Reset selected index when filtered results change
+  useEffect(() => {
+    setSelectedIndex(0);
+  }, [query]);
+
+  // Scroll selected item into view
+  useEffect(() => {
+    if (!isOpen || !menuRef.current) return;
+    const selected = menuRef.current.querySelector(".slash-menu-item.selected");
+    if (selected) {
+      selected.scrollIntoView({ block: "nearest" });
+    }
+  }, [selectedIndex, isOpen]);
+
+  // Remove the slash text and close the menu
+  const removeSlashText = useCallback(() => {
+    editor.update(() => {
+      const selection = $getSelection();
+      if (!$isRangeSelection(selection)) return;
+      const node = selection.anchor.getNode();
+      if ($isTextNode(node)) {
+        const text = node.getTextContent();
+        // Find the slash and query text to remove
+        const slashIndex = text.lastIndexOf("/");
+        if (slashIndex !== -1) {
+          // If the slash is all the text, remove the entire text content
+          if (slashIndex === 0) {
+            node.setTextContent("");
+          } else {
+            node.setTextContent(text.substring(0, slashIndex));
+          }
+          // Move selection to end
+          node.selectEnd();
+        }
+      }
+    });
+  }, [editor]);
+
+  const executeCommand = useCallback(
+    (item: SlashCommandItem) => {
+      removeSlashText();
+      setIsOpen(false);
+      setQuery("");
+      // Use setTimeout so the text removal completes before the action
+      setTimeout(() => item.action(editor), 0);
+    },
+    [editor, removeSlashText]
+  );
+
+  // Detect "/" typed at start of line or after whitespace
+  useEffect(() => {
+    return editor.registerTextContentListener((textContent) => {
+      // We handle detection in the update listener below
+    });
+  }, [editor]);
+
+  useEffect(() => {
+    return editor.registerUpdateListener(({ editorState, tags }) => {
+      if (tags.has("external-update")) return;
+
+      editorState.read(() => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
+          if (isOpen) {
+            setIsOpen(false);
+            setQuery("");
+          }
+          return;
+        }
+
+        const node = selection.anchor.getNode();
+        if (!$isTextNode(node)) {
+          if (isOpen) {
+            setIsOpen(false);
+            setQuery("");
+          }
+          return;
+        }
+
+        const text = node.getTextContent();
+        const offset = selection.anchor.offset;
+        const textBeforeCursor = text.substring(0, offset);
+
+        // Check for slash at start of text or after whitespace
+        const slashMatch = textBeforeCursor.match(/(?:^|\s)\/([a-zA-Z0-9 ]*)$/);
+        if (slashMatch) {
+          const filterText = slashMatch[1];
+          setQuery(filterText);
+          if (!isOpen) {
+            // Position the menu near the cursor
+            const domSelection = window.getSelection();
+            if (domSelection && domSelection.rangeCount > 0) {
+              const range = domSelection.getRangeAt(0);
+              const rect = range.getBoundingClientRect();
+              setMenuPosition({
+                x: rect.left,
+                y: rect.bottom + 4,
+              });
+            }
+            setIsOpen(true);
+          }
+        } else if (isOpen) {
+          setIsOpen(false);
+          setQuery("");
+        }
+      });
+    });
+  }, [editor, isOpen]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const removeDown = editor.registerCommand(
+      KEY_ARROW_DOWN_COMMAND,
+      (event) => {
+        event?.preventDefault();
+        setSelectedIndex((prev) =>
+          prev < filteredItems.length - 1 ? prev + 1 : 0
+        );
+        return true;
+      },
+      COMMAND_PRIORITY_HIGH
+    );
+
+    const removeUp = editor.registerCommand(
+      KEY_ARROW_UP_COMMAND,
+      (event) => {
+        event?.preventDefault();
+        setSelectedIndex((prev) =>
+          prev > 0 ? prev - 1 : filteredItems.length - 1
+        );
+        return true;
+      },
+      COMMAND_PRIORITY_HIGH
+    );
+
+    const removeEnter = editor.registerCommand(
+      KEY_ENTER_COMMAND,
+      (event) => {
+        if (filteredItems.length > 0) {
+          event?.preventDefault();
+          executeCommand(filteredItems[selectedIndex]);
+          return true;
+        }
+        return false;
+      },
+      COMMAND_PRIORITY_HIGH
+    );
+
+    const removeEscape = editor.registerCommand(
+      KEY_ESCAPE_COMMAND,
+      (event) => {
+        event?.preventDefault();
+        setIsOpen(false);
+        setQuery("");
+        return true;
+      },
+      COMMAND_PRIORITY_HIGH
+    );
+
+    return () => {
+      removeDown();
+      removeUp();
+      removeEnter();
+      removeEscape();
+    };
+  }, [editor, isOpen, filteredItems, selectedIndex, executeCommand]);
+
+  if (!isOpen || filteredItems.length === 0) return null;
+
+  return (
+    <div
+      ref={menuRef}
+      className="slash-command-menu"
+      style={{
+        position: "fixed",
+        left: menuPosition.x,
+        top: menuPosition.y,
+        zIndex: 1000,
+      }}
+    >
+      {filteredItems.map((item, index) => (
+        <button
+          key={item.label}
+          className={`slash-menu-item ${index === selectedIndex ? "selected" : ""}`}
+          onMouseEnter={() => setSelectedIndex(index)}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            executeCommand(item);
+          }}
+        >
+          <span className="slash-menu-icon">{item.icon}</span>
+          <span className="slash-menu-text">
+            <span className="slash-menu-label">{item.label}</span>
+            <span className="slash-menu-description">{item.description}</span>
+          </span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 // ── Sync Plugin: VS Code ↔ Lexical ──────────────────────────────
 
 function SyncPlugin() {
@@ -856,6 +1245,7 @@ function Editor() {
           <TabIndentationPlugin />
           <KeyboardShortcutsPlugin />
           <TableContextMenuPlugin />
+          <SlashCommandPlugin />
           <SyncPlugin />
         </div>
       </div>
