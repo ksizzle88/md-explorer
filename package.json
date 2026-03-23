@@ -2,7 +2,7 @@
   "name": "md-explorer",
   "displayName": "Markdown Explorer",
   "description": "Sidebar file explorer for markdown files across /workspace and /home/dev",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "publisher": "local",
   "engines": {
     "vscode": "^1.85.0"
