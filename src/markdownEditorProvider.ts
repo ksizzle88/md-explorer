@@ -98,7 +98,7 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}';">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}'; img-src https: http: data:;">
   <title>Markdown Editor</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -324,6 +324,95 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
       height: 1px;
       background: var(--vscode-menu-separatorBackground, #454545);
       margin: 4px 0;
+    }
+    /* Image node styles */
+    .editor-image-wrapper {
+      display: block;
+      margin: 16px 0;
+    }
+    .editor-image {
+      display: inline-block;
+      position: relative;
+      max-width: 100%;
+      cursor: pointer;
+      border: 2px solid transparent;
+      border-radius: 4px;
+      transition: border-color 0.15s;
+    }
+    .editor-image.selected {
+      border-color: var(--vscode-focusBorder, #007acc);
+    }
+    .editor-image img {
+      display: block;
+      max-width: 100%;
+      border-radius: 4px;
+    }
+    .editor-image .image-alt-text {
+      display: block;
+      font-size: 0.8em;
+      color: var(--vscode-descriptionForeground, #999);
+      margin-top: 4px;
+      text-align: center;
+      font-style: italic;
+    }
+    .editor-image .image-error {
+      padding: 16px;
+      background: var(--vscode-inputValidation-errorBackground, rgba(255, 0, 0, 0.1));
+      border: 1px solid var(--vscode-inputValidation-errorBorder, #be1100);
+      border-radius: 4px;
+      color: var(--vscode-errorForeground, #f48771);
+      font-size: 0.9em;
+    }
+    .image-edit-form {
+      background: var(--vscode-editorWidget-background, #252526);
+      border: 1px solid var(--vscode-editorWidget-border, #454545);
+      border-radius: 6px;
+      padding: 12px 16px;
+      margin: 16px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .image-edit-form label {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 12px;
+      color: var(--vscode-foreground, #ccc);
+    }
+    .image-edit-form input {
+      background: var(--vscode-input-background, #3c3c3c);
+      color: var(--vscode-input-foreground, #ccc);
+      border: 1px solid var(--vscode-input-border, #3c3c3c);
+      padding: 4px 8px;
+      border-radius: 3px;
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+    }
+    .image-edit-form input:focus {
+      border-color: var(--vscode-focusBorder, #007acc);
+    }
+    .image-edit-buttons {
+      display: flex;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .image-edit-buttons button {
+      background: var(--vscode-button-background, #0078d4);
+      color: var(--vscode-button-foreground, #fff);
+      border: none;
+      padding: 4px 12px;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .image-edit-buttons button:last-child {
+      background: var(--vscode-button-secondaryBackground, #3a3d41);
+      color: var(--vscode-button-secondaryForeground, #fff);
+    }
+    .image-edit-buttons button:hover {
+      opacity: 0.9;
     }
   </style>
 </head>

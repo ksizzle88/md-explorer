@@ -45,6 +45,8 @@ import {
   TRANSFORMERS,
 } from "@lexical/markdown";
 
+import { escapeTableCell, unescapeTableCell, splitTableRow } from "./tableUtils";
+
 import {
   $getRoot,
   $createParagraphNode,
@@ -79,6 +81,7 @@ import { HorizontalRulePlugin } from "@lexical/react/LexicalHorizontalRulePlugin
 import { INSERT_HORIZONTAL_RULE_COMMAND } from "@lexical/react/LexicalHorizontalRuleNode";
 import { $createLinkNode, $isLinkNode, TOGGLE_LINK_COMMAND } from "@lexical/link";
 import { $getNearestNodeOfType, mergeRegister } from "@lexical/utils";
+import { ImageNode, $createImageNode, $isImageNode } from "./ImageNode";
 
 // Acquire VS Code API
 declare function acquireVsCodeApi(): {
@@ -114,7 +117,7 @@ const TABLE_TRANSFORMER = {
         if (!$isTableCellNode(cell)) continue;
         // Get text content from cell, replacing newlines with spaces
         const text = cell.getTextContent().replace(/\n/g, " ").trim();
-        cellTexts.push(text || " ");
+        cellTexts.push(escapeTableCell(text) || " ");
       }
 
       output.push("| " + cellTexts.join(" | ") + " |");
@@ -163,7 +166,7 @@ const TABLE_TRANSFORMER = {
       if (TABLE_ROW_DIVIDER_REG_EXP.test(line)) continue;
       const match = line.match(TABLE_ROW_REG_EXP);
       if (match) {
-        const cells = match[1].split("|").map((c) => c.trim());
+        const cells = splitTableRow(match[1]).map((c) => unescapeTableCell(c));
         dataRows.push(cells);
       }
     }
@@ -204,8 +207,27 @@ const TABLE_TRANSFORMER = {
   type: "multiline-element" as const,
 };
 
-// All transformers including our custom table one
-const ALL_TRANSFORMERS = [TABLE_TRANSFORMER, ...TRANSFORMERS];
+// ── Image Markdown Transformer ──────────────────────────────────
+
+const IMAGE_TRANSFORMER = {
+  dependencies: [ImageNode],
+  export: (node: any) => {
+    if (!$isImageNode(node)) return null;
+    return `![${node.getAltText()}](${node.getSrc()})`;
+  },
+  importRegExp: /!(?:\[([^\]]*)\])(?:\(([^)]+)\))/,
+  regExp: /!(?:\[([^\]]*)\])(?:\(([^)]+)\))$/,
+  replace: (textNode: any, match: RegExpMatchArray) => {
+    const [, altText, src] = match;
+    const imageNode = $createImageNode(src, altText || "");
+    textNode.replace(imageNode);
+  },
+  trigger: ")",
+  type: "text-match" as const,
+};
+
+// All transformers including our custom table and image ones
+const ALL_TRANSFORMERS = [TABLE_TRANSFORMER, IMAGE_TRANSFORMER, ...TRANSFORMERS];
 
 // ── Toolbar ──────────────────────────────────────────────────────
 
@@ -325,6 +347,30 @@ function ToolbarPlugin() {
     });
   };
 
+  const insertImage = () => {
+    const url = prompt("Enter image URL:");
+    if (!url) return;
+    const alt = prompt("Enter alt text (optional):") || "";
+    editor.update(() => {
+      const imageNode = $createImageNode(url, alt);
+      const selection = $getSelection();
+      if ($isRangeSelection(selection)) {
+        const anchor = selection.anchor.getNode();
+        const topLevel =
+          anchor.getKey() === "root"
+            ? anchor
+            : anchor.getTopLevelElementOrThrow();
+        if (topLevel && topLevel.getKey() !== "root") {
+          topLevel.insertAfter(imageNode);
+        } else {
+          $getRoot().append(imageNode);
+        }
+      } else {
+        $getRoot().append(imageNode);
+      }
+    });
+  };
+
   return (
     <div className="toolbar">
       <button
@@ -429,6 +475,9 @@ function ToolbarPlugin() {
       </button>
       <button onClick={insertTable} title="Insert Table (3×3)">
         ⊞
+      </button>
+      <button onClick={insertImage} title="Insert Image">
+        🖼
       </button>
       <button
         onClick={() =>
@@ -801,6 +850,7 @@ const editorConfig = {
     TableNode,
     TableCellNode,
     TableRowNode,
+    ImageNode,
   ],
   onError: (error: Error) => {
     console.error("Lexical error:", error);
