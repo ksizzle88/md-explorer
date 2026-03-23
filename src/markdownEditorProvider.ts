@@ -589,6 +589,27 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
       opacity: 1;
       transition: opacity 0.2s ease;
     }
+    /* Source mode textarea */
+    .source-textarea {
+      width: 100%;
+      min-height: calc(100vh - 100px);
+      background: var(--vscode-editor-background);
+      color: var(--vscode-editor-foreground);
+      border: 1px solid var(--vscode-panel-border, #444);
+      border-radius: 4px;
+      padding: 16px 20px;
+      font-family: var(--vscode-editor-font-family, 'Cascadia Code', 'Fira Code', Consolas, monospace);
+      font-size: var(--vscode-editor-font-size, var(--vscode-font-size, 14px));
+      line-height: 1.5;
+      resize: vertical;
+      outline: none;
+      tab-size: 2;
+      white-space: pre;
+      overflow-x: auto;
+    }
+    .source-textarea:focus {
+      border-color: var(--vscode-focusBorder, #007acc);
+    }
   </style>
 </head>
 <body>

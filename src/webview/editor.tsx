@@ -227,7 +227,7 @@ const ALL_TRANSFORMERS = [TABLE_TRANSFORMER, IMAGE_TRANSFORMER, ...TRANSFORMERS]
 
 // ── Toolbar ──────────────────────────────────────────────────────
 
-function ToolbarPlugin({ isFocusMode, onToggleFocusMode }: { isFocusMode: boolean; onToggleFocusMode: () => void }) {
+function ToolbarPlugin({ isFocusMode, onToggleFocusMode, isSourceMode, onToggleSourceMode }: { isFocusMode: boolean; onToggleFocusMode: () => void; isSourceMode: boolean; onToggleSourceMode: () => void }) {
   const [editor] = useLexicalComposerContext();
   const [isBold, setIsBold] = useState(false);
   const [isItalic, setIsItalic] = useState(false);
@@ -490,6 +490,14 @@ function ToolbarPlugin({ isFocusMode, onToggleFocusMode }: { isFocusMode: boolea
         title="Focus Mode (Ctrl+Shift+F)"
       >
         Focus
+      </button>
+      <div className="separator" />
+      <button
+        className={isSourceMode ? "active" : ""}
+        onClick={onToggleSourceMode}
+        title="View Markdown Source"
+      >
+        {"</>"}&#xFE0E; Src
       </button>
     </div>
   );
@@ -1581,37 +1589,111 @@ const editorConfig = {
   },
 };
 
+// ── Source Mode Plugin ────────────────────────────────────────────
+// Handles switching between rich text and raw markdown source view.
+
+function SourceModePlugin({ isSourceMode, sourceText, onSourceTextChange }: {
+  isSourceMode: boolean;
+  sourceText: string;
+  onSourceTextChange: (text: string) => void;
+}) {
+  const [editor] = useLexicalComposerContext();
+  const prevSourceMode = useRef(isSourceMode);
+
+  useEffect(() => {
+    const wasSource = prevSourceMode.current;
+    prevSourceMode.current = isSourceMode;
+
+    if (isSourceMode && !wasSource) {
+      // Entering source mode: export editor state to markdown
+      editor.getEditorState().read(() => {
+        const markdown = $convertToMarkdownString(ALL_TRANSFORMERS);
+        onSourceTextChange(markdown);
+      });
+    } else if (!isSourceMode && wasSource) {
+      // Leaving source mode: import markdown back into editor
+      editor.update(
+        () => {
+          const root = $getRoot();
+          root.clear();
+          $convertFromMarkdownString(sourceText, ALL_TRANSFORMERS);
+        },
+        { tag: "external-update" }
+      );
+      // Also sync to VS Code
+      vscode.postMessage({ type: "edit", text: sourceText });
+    }
+  }, [isSourceMode]);
+
+  // When source text changes in source mode, debounce-sync to VS Code
+  useEffect(() => {
+    if (!isSourceMode) return;
+    const timer = setTimeout(() => {
+      vscode.postMessage({ type: "edit", text: sourceText });
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [sourceText, isSourceMode]);
+
+  return null;
+}
+
 function Editor() {
   const [isFocusMode, setIsFocusMode] = useState(false);
+  const [isSourceMode, setIsSourceMode] = useState(false);
+  const [sourceText, setSourceText] = useState("");
   const toggleFocusMode = useCallback(() => setIsFocusMode((prev) => !prev), []);
+  const toggleSourceMode = useCallback(() => setIsSourceMode((prev) => !prev), []);
 
   return (
     <LexicalComposer initialConfig={editorConfig}>
-      <ToolbarPlugin isFocusMode={isFocusMode} onToggleFocusMode={toggleFocusMode} />
-      <div className="editor-shell">
-        <div className="editor-content-area">
-          <RichTextPlugin
-            contentEditable={<ContentEditable />}
-            ErrorBoundary={LexicalErrorBoundary}
-          />
-          <HistoryPlugin />
-          <ListPlugin />
-          <LinkPlugin />
-          <HorizontalRulePlugin />
-          <TablePlugin hasTabHandler={true} />
-          <TabIndentationPlugin />
-          <KeyboardShortcutsPlugin />
-          <CodeHighlightPlugin />
-          <CodeBlockBehaviorPlugin />
-          <FocusModePlugin isActive={isFocusMode} onToggle={toggleFocusMode} />
-          <TableContextMenuPlugin />
-          <SlashCommandPlugin />
-          <SyncPlugin />
-          <TrailingParagraphPlugin />
-          <ClickToEndPlugin />
-          <DragDropPlugin />
+      <ToolbarPlugin
+        isFocusMode={isFocusMode}
+        onToggleFocusMode={toggleFocusMode}
+        isSourceMode={isSourceMode}
+        onToggleSourceMode={toggleSourceMode}
+      />
+      <SourceModePlugin
+        isSourceMode={isSourceMode}
+        sourceText={sourceText}
+        onSourceTextChange={setSourceText}
+      />
+      {isSourceMode ? (
+        <div className="editor-shell">
+          <div className="editor-content-area">
+            <textarea
+              className="source-textarea"
+              value={sourceText}
+              onChange={(e) => setSourceText(e.target.value)}
+              spellCheck={false}
+            />
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="editor-shell">
+          <div className="editor-content-area">
+            <RichTextPlugin
+              contentEditable={<ContentEditable />}
+              ErrorBoundary={LexicalErrorBoundary}
+            />
+            <HistoryPlugin />
+            <ListPlugin />
+            <LinkPlugin />
+            <HorizontalRulePlugin />
+            <TablePlugin hasTabHandler={true} />
+            <TabIndentationPlugin />
+            <KeyboardShortcutsPlugin />
+            <CodeHighlightPlugin />
+            <CodeBlockBehaviorPlugin />
+            <FocusModePlugin isActive={isFocusMode} onToggle={toggleFocusMode} />
+            <TableContextMenuPlugin />
+            <SlashCommandPlugin />
+            <SyncPlugin />
+            <TrailingParagraphPlugin />
+            <ClickToEndPlugin />
+            <DragDropPlugin />
+          </div>
+        </div>
+      )}
     </LexicalComposer>
   );
 }
