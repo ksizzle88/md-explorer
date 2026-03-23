@@ -1,10 +1,7 @@
 import { useEffect, useRef, useCallback } from "react";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import {
-  $getRoot,
   $getNodeByKey,
-  LexicalEditor,
-  ElementNode,
 } from "lexical";
 
 // ── Helpers ──────────────────────────────────────────────────────
