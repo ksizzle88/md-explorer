@@ -78,8 +78,8 @@ const vscode = acquireVsCodeApi();
 
 // ── Table Markdown Transformer ───────────────────────────────────
 
-const TABLE_ROW_REG_EXP = /^(?:\|)(.+)(?:\|)\s?$/;
-const TABLE_ROW_DIVIDER_REG_EXP = /^(\| ?:?-+:? ?)+\|\s?$/;
+const TABLE_ROW_REG_EXP = /^(?:\|)(.+)(?:\|)\s*$/;
+const TABLE_ROW_DIVIDER_REG_EXP = /^(\| ?:?-+:? ?)+\|\s*$/;
 
 const TABLE_TRANSFORMER = {
   dependencies: [TableNode, TableRowNode, TableCellNode],
