@@ -59,7 +59,9 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
             new vscode.Range(0, 0, document.lineCount, 0),
             msg.text
           );
-          vscode.workspace.applyEdit(edit);
+          vscode.workspace.applyEdit(edit).then(undefined, (err) => {
+            console.error("Failed to apply edit:", err);
+          });
         }
       }
     );

@@ -20,12 +20,6 @@ export interface MdFile {
   relPath: string; // relative to search root, e.g. "tasks/foo/bar.md"
 }
 
-export interface MdDirectory {
-  label: string;
-  fullPath: string;
-  files: MdFile[];
-}
-
 export interface TreeNode {
   name: string;        // display label (may be compacted: "superpowers/plans")
   fullPath: string;    // absolute path of the deepest directory in this node
@@ -114,39 +108,6 @@ function compactTree(node: TreeNode): void {
     node.files = only.files;
     node.children = only.children;
   }
-}
-
-/** Scan /workspace and /home/dev for .md files, grouped by directory. (legacy) */
-export function scanMarkdownFiles(): MdDirectory[] {
-  const filesByDir = new Map<string, MdFile[]>();
-
-  for (const searchPath of SEARCH_PATHS) {
-    if (fs.existsSync(searchPath)) {
-      scanDir(searchPath, filesByDir, searchPath);
-    }
-  }
-
-  const dirs = [...filesByDir.entries()]
-    .map(([dirPath, files]) => ({
-      label: makeLabel(dirPath),
-      fullPath: dirPath,
-      files: files.sort((a, b) => a.name.localeCompare(b.name)),
-    }))
-    .sort((a, b) => {
-      const aWs = a.fullPath.startsWith("/workspace") ? 0 : 1;
-      const bWs = b.fullPath.startsWith("/workspace") ? 0 : 1;
-      if (aWs !== bWs) return aWs - bWs;
-      return a.fullPath.localeCompare(b.fullPath);
-    });
-
-  return dirs;
-}
-
-function makeLabel(dirPath: string): string {
-  if (dirPath.startsWith("/workspace/")) return dirPath.slice("/workspace/".length);
-  if (dirPath === "/workspace") return "/workspace";
-  if (dirPath.startsWith("/home/dev/")) return "~/" + dirPath.slice("/home/dev/".length);
-  return dirPath;
 }
 
 function scanDir(dir: string, results: Map<string, MdFile[]>, searchRoot: string): void {

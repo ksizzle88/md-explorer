@@ -5,7 +5,6 @@ import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
 import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
-import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
 import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
 import { ListPlugin } from "@lexical/react/LexicalListPlugin";
 import { LinkPlugin } from "@lexical/react/LexicalLinkPlugin";
@@ -34,9 +33,6 @@ import {
   $insertTableColumnAtSelection,
   $deleteTableRowAtSelection,
   $deleteTableColumnAtSelection,
-  $findTableNode,
-  $findCellNode,
-  INSERT_TABLE_COMMAND,
 } from "@lexical/table";
 
 import {
@@ -51,27 +47,17 @@ import {
   $getRoot,
   $createParagraphNode,
   $createTextNode,
-  EditorState,
   FORMAT_TEXT_COMMAND,
   UNDO_COMMAND,
   REDO_COMMAND,
   $getSelection,
   $isRangeSelection,
-  TextFormatType,
-  LexicalEditor,
   COMMAND_PRIORITY_LOW,
-  COMMAND_PRIORITY_HIGH,
-  KEY_TAB_COMMAND,
-  INDENT_CONTENT_COMMAND,
-  OUTDENT_CONTENT_COMMAND,
-  $isElementNode,
 } from "lexical";
 
 import {
   INSERT_ORDERED_LIST_COMMAND,
   INSERT_UNORDERED_LIST_COMMAND,
-  $isListItemNode,
-  $isListNode,
 } from "@lexical/list";
 
 import { $createHeadingNode, $createQuoteNode, $isHeadingNode } from "@lexical/rich-text";
@@ -79,8 +65,7 @@ import { $setBlocksType } from "@lexical/selection";
 import { $createCodeNode } from "@lexical/code";
 import { HorizontalRulePlugin } from "@lexical/react/LexicalHorizontalRulePlugin";
 import { INSERT_HORIZONTAL_RULE_COMMAND } from "@lexical/react/LexicalHorizontalRuleNode";
-import { $createLinkNode, $isLinkNode, TOGGLE_LINK_COMMAND } from "@lexical/link";
-import { $getNearestNodeOfType, mergeRegister } from "@lexical/utils";
+import { $isLinkNode, TOGGLE_LINK_COMMAND } from "@lexical/link";
 import { ImageNode, $createImageNode, $isImageNode } from "./ImageNode";
 
 // Acquire VS Code API
@@ -124,7 +109,7 @@ const TABLE_TRANSFORMER = {
 
       // Add divider row after header
       if (isFirstRow) {
-        const divider = cellTexts.map((t) => "---").join(" | ");
+        const divider = cellTexts.map(() => "---").join(" | ");
         output.push("| " + divider + " |");
         isFirstRow = false;
       }
@@ -762,14 +747,12 @@ function TableContextMenuPlugin() {
 
 function SyncPlugin() {
   const [editor] = useLexicalComposerContext();
-  const [isExternalUpdate, setIsExternalUpdate] = useState(false);
 
   // Listen for messages from VS Code extension
   useEffect(() => {
     const handler = (event: MessageEvent) => {
       const msg = event.data;
       if (msg.type === "update") {
-        setIsExternalUpdate(true);
         editor.update(
           () => {
             const root = $getRoot();
@@ -778,10 +761,8 @@ function SyncPlugin() {
           },
           { tag: "external-update" }
         );
-        // Reset flag after a tick
-        setTimeout(() => setIsExternalUpdate(false), 0);
       }
-    };
+};
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);
   }, [editor]);
