@@ -1,0 +1,153 @@
+{
+  "name": "md-explorer",
+  "displayName": "Markdown Explorer",
+  "description": "Sidebar file explorer for markdown files across /workspace and /home/dev",
+  "version": "0.2.0",
+  "publisher": "local",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "md-explorer",
+          "title": "Markdown Explorer",
+          "icon": "$(markdown)"
+        }
+      ]
+    },
+    "views": {
+      "md-explorer": [
+        {
+          "id": "mdExplorerFiles",
+          "name": "Markdown Files",
+          "type": "webview"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "mdExplorer.refresh",
+        "title": "Refresh",
+        "icon": "$(refresh)",
+        "category": "Markdown Explorer"
+      },
+      {
+        "command": "mdExplorer.showFilter",
+        "title": "Show Filter",
+        "icon": "$(filter)",
+        "category": "Markdown Explorer"
+      },
+      {
+        "command": "mdExplorer.hideFilter",
+        "title": "Hide Filter",
+        "icon": "$(filter-filled)",
+        "category": "Markdown Explorer"
+      },
+      {
+        "command": "mdExplorer.showTree",
+        "title": "Tree View",
+        "icon": "$(list-tree)",
+        "category": "Markdown Explorer"
+      },
+      {
+        "command": "mdExplorer.showList",
+        "title": "List View",
+        "icon": "$(list-flat)",
+        "category": "Markdown Explorer"
+      },
+      {
+        "command": "mdExplorer.collapseAll",
+        "title": "Collapse All",
+        "icon": "$(collapse-all)",
+        "category": "Markdown Explorer"
+      },
+      {
+        "command": "mdExplorer.openFile",
+        "title": "Open File",
+        "category": "Markdown Explorer"
+      }
+    ],
+    "customEditors": [
+      {
+        "viewType": "mdExplorer.markdownEditor",
+        "displayName": "Markdown Rich Editor",
+        "selector": [
+          {
+            "filenamePattern": "*.md"
+          }
+        ],
+        "priority": "default"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "mdExplorer.showFilter",
+          "when": "view == mdExplorerFiles && !mdExplorer.filterVisible",
+          "group": "navigation@1"
+        },
+        {
+          "command": "mdExplorer.hideFilter",
+          "when": "view == mdExplorerFiles && mdExplorer.filterVisible",
+          "group": "navigation@1"
+        },
+        {
+          "command": "mdExplorer.showList",
+          "when": "view == mdExplorerFiles && mdExplorer.viewMode != 'list'",
+          "group": "navigation@2"
+        },
+        {
+          "command": "mdExplorer.showTree",
+          "when": "view == mdExplorerFiles && mdExplorer.viewMode == 'list'",
+          "group": "navigation@2"
+        },
+        {
+          "command": "mdExplorer.collapseAll",
+          "when": "view == mdExplorerFiles && mdExplorer.viewMode != 'list'",
+          "group": "navigation@3"
+        },
+        {
+          "command": "mdExplorer.refresh",
+          "when": "view == mdExplorerFiles",
+          "group": "navigation@4"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./ && node esbuild.config.mjs",
+    "watch": "tsc -watch -p ./",
+    "build:webview": "node esbuild.config.mjs",
+    "package": "npx @vscode/vsce package --no-dependencies"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.0.0",
+    "esbuild": "^0.27.4",
+    "typescript": "^5.3.0"
+  },
+  "dependencies": {
+    "@lexical/code": "^0.42.0",
+    "@lexical/link": "^0.42.0",
+    "@lexical/list": "^0.42.0",
+    "@lexical/markdown": "^0.42.0",
+    "@lexical/react": "^0.42.0",
+    "@lexical/rich-text": "^0.42.0",
+    "@lexical/selection": "^0.42.0",
+    "@lexical/table": "^0.42.0",
+    "@lexical/utils": "^0.42.0",
+    "lexical": "^0.42.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  }
+}

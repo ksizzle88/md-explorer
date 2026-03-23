@@ -1,0 +1,29 @@
+{
+    "name": "md-explorer (Claudio)",
+    "dockerComposeFile": "docker-compose.yml",
+    "service": "md-explorer",
+    "workspaceFolder": "/workspace",
+    "remoteUser": "dev",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "anthropic.claude-code",
+                "dbaeumer.vscode-eslint",
+                "esbenp.prettier-vscode",
+                "eamodio.gitlens",
+                "ms-vscode.vscode-typescript-next"
+            ],
+            "settings": {
+                "terminal.integrated.defaultProfile.linux": "zsh",
+                "typescript.tsdk": "node_modules/typescript/lib",
+                "editor.formatOnSave": true,
+                "[typescript]": {
+                    "editor.defaultFormatter": "esbenp.prettier-vscode"
+                },
+                "[json]": {
+                    "editor.defaultFormatter": "esbenp.prettier-vscode"
+                }
+            }
+        }
+    }
+}

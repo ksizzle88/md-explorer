@@ -1,0 +1,68 @@
+# Markdown Explorer — Docker Compose
+# Extends Claudio base with VS Code extension development tooling
+# Volume strategy: Named bind mounts to ~/.claudio/ on host
+
+services:
+  md-explorer:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+
+    image: md-explorer:latest
+    hostname: md-explorer
+
+    env_file:
+      - path: ../.env
+        required: false
+
+    volumes:
+      # Project workspace
+      - ..:/workspace:cached
+      # Claudio v3: shared auth/config/plugins + per-container sessions
+      - claudio-shared:/home/dev/.claudio-shared
+      - md-explorer-sessions:/home/dev/.claudio-sessions
+
+    environment:
+      CLAUDIO_SHARED: /home/dev/.claudio-shared
+      CLAUDIO_SESSIONS: /home/dev/.claudio-sessions
+      CLAUDE_CONFIG_DIR: /home/dev/.claude
+      SHELL: /bin/zsh
+      EDITOR: nano
+      TZ: ${TZ:-America/New_York}
+      LANG: C.UTF-8
+      LC_ALL: C.UTF-8
+
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 2G
+
+    labels:
+      com.claudio.description: "Markdown Explorer VS Code extension devcontainer"
+      com.claudio.project: "md-explorer"
+      com.claudio.version: "3.0.0"
+
+    working_dir: /workspace
+    network_mode: bridge
+    restart: unless-stopped
+
+volumes:
+  # Named bind mount — shared across all Claudio containers
+  claudio-shared:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${CLAUDIO_ROOT:-/home/kschepis/.claudio}/shared
+
+  # Named bind mount — persistent md-explorer sessions
+  md-explorer-sessions:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${CLAUDIO_ROOT:-/home/kschepis/.claudio}/sessions/md-explorer
