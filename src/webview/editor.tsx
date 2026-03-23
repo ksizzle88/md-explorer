@@ -21,6 +21,7 @@ import {
   $isRangeSelection,
   $isTextNode,
   $createParagraphNode,
+  $createTextNode,
   $isParagraphNode,
   TextNode,
   LexicalNode,

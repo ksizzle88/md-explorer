@@ -57,8 +57,12 @@ export function parseTableDataRows(
 ): string[][] {
   const dataRows: string[][] = [];
   let dividerFound = false;
-  for (const line of tableLines) {
-    if (!dividerFound && dividerRegExp.test(line)) {
+  for (let i = 0; i < tableLines.length; i++) {
+    const line = tableLines[i];
+    // Only check for divider on lines after the first (header) row.
+    // The header row may match the divider regex (e.g. cell value "-")
+    // but should always be preserved as data.
+    if (!dividerFound && i > 0 && dividerRegExp.test(line)) {
       dividerFound = true;
       continue;
     }

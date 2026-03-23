@@ -190,6 +190,54 @@ describe("BUG: dash-only data rows dropped by old logic", () => {
   });
 });
 
+// ─── BUG: header row matching divider regex gets swallowed ──────────
+//
+// parseTableDataRows skips the FIRST line matching the divider regex.
+// But it doesn't protect the header row (line 0) from being treated as
+// a divider.  A header like `| - |` matches the divider regex because
+// `-` satisfies `-+`, so it's silently consumed as the divider separator.
+// The real divider on line 1 then becomes a data row with cell "---".
+
+describe("BUG: header row that matches divider regex is swallowed", () => {
+  it("header with single dash cell is eaten by divider detection", () => {
+    const tableLines = [
+      "| - |",
+      "| --- |",
+      "| data |",
+    ];
+
+    const dataRows = parseTableDataRows(tableLines, TABLE_ROW_REG_EXP, TABLE_ROW_DIVIDER_REG_EXP);
+
+    // Expected: header "-", divider skipped, data "data"
+    // Bug: header eaten as divider, "---" becomes first data row
+    expect(dataRows).toEqual([["-"], ["data"]]);
+  });
+
+  it("multi-column header with dash cells is eaten by divider detection", () => {
+    const tableLines = [
+      "| - | -- |",
+      "| --- | --- |",
+      "| x | y |",
+    ];
+
+    const dataRows = parseTableDataRows(tableLines, TABLE_ROW_REG_EXP, TABLE_ROW_DIVIDER_REG_EXP);
+
+    expect(dataRows).toEqual([["-", "--"], ["x", "y"]]);
+  });
+
+  it("header with colon-dash pattern (looks like alignment) is preserved", () => {
+    const tableLines = [
+      "| :- |",
+      "| --- |",
+      "| val |",
+    ];
+
+    const dataRows = parseTableDataRows(tableLines, TABLE_ROW_REG_EXP, TABLE_ROW_DIVIDER_REG_EXP);
+
+    expect(dataRows).toEqual([[":-"], ["val"]]);
+  });
+});
+
 describe("round-trip: backslash in cells", () => {
   it("round-trips a cell containing a backslash", () => {
     const original = "a\\b";
