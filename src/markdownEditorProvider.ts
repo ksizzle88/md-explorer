@@ -149,7 +149,7 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
   <title>Markdown Editor</title>
   <link rel="stylesheet" href="${cssUri}">
   <style>
-    /* VS Code theme integration overrides */
+    /* Minimal inline styles — bulk theming is in vscode-theme-overrides.css */
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body {
       width: 100%;
@@ -167,69 +167,12 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
       width: 100%;
       height: 100vh;
     }
-    /* Hide playground header - we don't need it in VS Code */
-    header { display: none !important; }
-    /* Hide settings gear and GitHub corner */
-    .settings-gear, .github-corner { display: none !important; }
-    /* Editor shell fills available space */
     .editor-shell {
       flex: 1;
       overflow-y: auto;
       overflow-x: hidden;
       position: relative;
     }
-    /* VS Code color overrides for the playground theme */
-    .PlaygroundEditorTheme__link {
-      color: var(--vscode-textLink-foreground, #3794ff);
-    }
-    .PlaygroundEditorTheme__link:hover {
-      color: var(--vscode-textLink-activeForeground, #3794ff);
-    }
-    .PlaygroundEditorTheme__quote {
-      border-left-color: var(--vscode-textBlockQuote-border, #007acc);
-      color: var(--vscode-textBlockQuote-foreground, inherit);
-    }
-    .PlaygroundEditorTheme__code {
-      background: var(--vscode-textCodeBlock-background, rgba(128, 128, 128, 0.15));
-      font-family: var(--vscode-editor-font-family, 'Cascadia Code', 'Fira Code', Consolas, monospace);
-    }
-    .PlaygroundEditorTheme__textCode {
-      background: var(--vscode-textCodeBlock-background, rgba(128, 128, 128, 0.15));
-      font-family: var(--vscode-editor-font-family, 'Cascadia Code', 'Fira Code', Consolas, monospace);
-    }
-    /* Action bar and toolbar adjustments for VS Code */
-    .toolbar {
-      border-bottom-color: var(--vscode-panel-border, #444);
-      background: var(--vscode-editor-background);
-    }
-    .actions {
-      border-top-color: var(--vscode-panel-border, #444);
-      background: var(--vscode-editor-background);
-    }
-    /* Modal styling for VS Code */
-    .Modal__overlay {
-      background: rgba(0, 0, 0, 0.5);
-    }
-    .Modal__modal {
-      background: var(--vscode-editorWidget-background, #252526);
-      border: 1px solid var(--vscode-editorWidget-border, #454545);
-      color: var(--vscode-foreground);
-    }
-    /* Dropdown menus */
-    .dropdown {
-      background: var(--vscode-menu-background, #252526);
-      border-color: var(--vscode-menu-border, #454545);
-    }
-    /* Tree view panel */
-    .tree-view-output {
-      background: var(--vscode-editor-background);
-      color: var(--vscode-editor-foreground);
-    }
-    /* Table of contents */
-    .table-of-contents {
-      background: var(--vscode-editor-background);
-    }
-    /* Contenteditable area minimum height */
     .ContentEditable__root {
       min-height: calc(100vh - 120px);
     }

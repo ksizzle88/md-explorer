@@ -1,0 +1,973 @@
+/**
+ * VS Code Theme Overrides for Lexical Playground
+ *
+ * This file MUST be imported last in the webview entry point so that
+ * it overrides all hardcoded colors from the playground CSS files.
+ * All colors use VS Code CSS custom properties (--vscode-*).
+ */
+
+/* ═══════════════════════════════════════════════════════════════════
+   BASE / LAYOUT
+   ═══════════════════════════════════════════════════════════════════ */
+
+body {
+  background: var(--vscode-editor-background) !important;
+  color: var(--vscode-editor-foreground) !important;
+  padding: 0 !important;
+}
+
+header { display: none !important; }
+.settings-gear, .github-corner { display: none !important; }
+#options-button, #test-recorder-button, #paste-log-button, #docs-button {
+  display: none !important;
+}
+
+.editor-shell {
+  color: var(--vscode-editor-foreground) !important;
+  margin: 0 auto !important;
+  max-width: 100% !important;
+}
+
+.editor-shell .editor-container {
+  background: var(--vscode-editor-background) !important;
+  border-radius: 0 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   TOOLBAR
+   ═══════════════════════════════════════════════════════════════════ */
+
+.toolbar {
+  background: var(--vscode-editorWidget-background) !important;
+  border-bottom: 1px solid var(--vscode-editorWidget-border) !important;
+  border-radius: 0 !important;
+}
+
+.toolbar .toolbar-item .text,
+.toolbar .toolbar-item .icon {
+  color: var(--vscode-icon-foreground, var(--vscode-foreground)) !important;
+}
+
+.toolbar .toolbar-item .text {
+  color: var(--vscode-foreground) !important;
+}
+
+button.toolbar-item i.format {
+  opacity: 0.7 !important;
+}
+
+button.toolbar-item.active {
+  background-color: var(--vscode-button-background) !important;
+}
+
+button.toolbar-item.active i {
+  opacity: 1 !important;
+}
+
+.toolbar-item:hover:not([disabled]) {
+  background-color: var(--vscode-button-hoverBackground, var(--vscode-list-hoverBackground)) !important;
+}
+
+.toolbar .divider {
+  background-color: var(--vscode-editorWidget-border) !important;
+}
+
+.toolbar .block-controls .dropdown-button-text {
+  color: var(--vscode-foreground) !important;
+}
+
+.link-editor .button.active,
+.toolbar .button.active {
+  background-color: var(--vscode-button-background) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   FONT SIZE INPUT
+   ═══════════════════════════════════════════════════════════════════ */
+
+.font-size-input {
+  color: var(--vscode-input-foreground) !important;
+  background: var(--vscode-input-background) !important;
+  border-color: var(--vscode-input-border) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   DROPDOWNS & TYPEAHEAD
+   ═══════════════════════════════════════════════════════════════════ */
+
+.dropdown {
+  background: var(--vscode-dropdown-background) !important;
+  border-color: var(--vscode-dropdown-border, var(--vscode-editorWidget-border)) !important;
+  color: var(--vscode-dropdown-foreground) !important;
+}
+
+.dropdown .item {
+  background: var(--vscode-dropdown-background) !important;
+  color: var(--vscode-dropdown-foreground) !important;
+}
+
+.dropdown .item:hover,
+.dropdown .item.active {
+  background: var(--vscode-list-hoverBackground) !important;
+}
+
+.typeahead-popover {
+  background: var(--vscode-editorWidget-background) !important;
+  box-shadow: 0 2px 8px var(--vscode-widget-shadow, rgba(0,0,0,0.36)) !important;
+  border: 1px solid var(--vscode-editorWidget-border) !important;
+}
+
+.typeahead-popover li {
+  color: var(--vscode-foreground) !important;
+  background-color: var(--vscode-editorWidget-background) !important;
+}
+
+.typeahead-popover li:hover {
+  background-color: var(--vscode-list-hoverBackground) !important;
+}
+
+.typeahead-popover ul li.selected {
+  background: var(--vscode-list-activeSelectionBackground) !important;
+  color: var(--vscode-list-activeSelectionForeground) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   SELECT
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+  --select-border: var(--vscode-input-border) !important;
+  --select-focus: var(--vscode-focusBorder) !important;
+}
+
+.select {
+  background: var(--vscode-dropdown-background) !important;
+  color: var(--vscode-dropdown-foreground) !important;
+  border-color: var(--vscode-input-border) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   MODALS
+   ═══════════════════════════════════════════════════════════════════ */
+
+.Modal__overlay {
+  background-color: rgba(0, 0, 0, 0.5) !important;
+}
+
+.Modal__modal {
+  background-color: var(--vscode-editorWidget-background) !important;
+  border: 1px solid var(--vscode-editorWidget-border) !important;
+  box-shadow: 0 4px 16px var(--vscode-widget-shadow, rgba(0,0,0,0.36)) !important;
+  color: var(--vscode-foreground) !important;
+}
+
+.Modal__title {
+  color: var(--vscode-foreground) !important;
+  border-bottom-color: var(--vscode-editorWidget-border) !important;
+}
+
+.Modal__closeButton {
+  background-color: var(--vscode-button-secondaryBackground, transparent) !important;
+  color: var(--vscode-foreground) !important;
+}
+
+.Modal__closeButton:hover {
+  background-color: var(--vscode-button-secondaryHoverBackground) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   BUTTONS
+   ═══════════════════════════════════════════════════════════════════ */
+
+.Button__root {
+  background-color: var(--vscode-button-secondaryBackground) !important;
+  color: var(--vscode-button-secondaryForeground) !important;
+}
+
+.Button__root:hover {
+  background-color: var(--vscode-button-secondaryHoverBackground) !important;
+}
+
+.Button__disabled,
+.Button__disabled:hover {
+  background-color: var(--vscode-button-secondaryBackground) !important;
+  opacity: 0.5 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   INPUTS
+   ═══════════════════════════════════════════════════════════════════ */
+
+.Input__label {
+  color: var(--vscode-foreground) !important;
+}
+
+.Input__input {
+  background: var(--vscode-input-background) !important;
+  color: var(--vscode-input-foreground) !important;
+  border-color: var(--vscode-input-border) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   CONTENT EDITABLE
+   ═══════════════════════════════════════════════════════════════════ */
+
+.ContentEditable__placeholder {
+  color: var(--vscode-input-placeholderForeground, #999) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   SCROLLBARS
+   ═══════════════════════════════════════════════════════════════════ */
+
+pre::-webkit-scrollbar {
+  background: transparent !important;
+}
+
+pre::-webkit-scrollbar-thumb {
+  background: var(--vscode-scrollbarSlider-background) !important;
+}
+
+pre::-webkit-scrollbar-thumb:hover {
+  background: var(--vscode-scrollbarSlider-hoverBackground) !important;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--vscode-scrollbarSlider-background);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--vscode-scrollbarSlider-hoverBackground);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: var(--vscode-scrollbarSlider-activeBackground);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   PLAYGROUND EDITOR THEME OVERRIDES
+   ═══════════════════════════════════════════════════════════════════ */
+
+.PlaygroundEditorTheme__h1 {
+  color: var(--vscode-editor-foreground) !important;
+}
+
+.PlaygroundEditorTheme__h2 {
+  color: var(--vscode-descriptionForeground, var(--vscode-editor-foreground)) !important;
+}
+
+.PlaygroundEditorTheme__quote {
+  color: var(--vscode-textBlockQuote-foreground, inherit) !important;
+  border-left-color: var(--vscode-textBlockQuote-border) !important;
+}
+
+.PlaygroundEditorTheme__link {
+  color: var(--vscode-textLink-foreground) !important;
+}
+
+.PlaygroundEditorTheme__link:hover {
+  color: var(--vscode-textLink-activeForeground) !important;
+}
+
+.PlaygroundEditorTheme__textCode {
+  background-color: var(--vscode-textCodeBlock-background) !important;
+  font-family: var(--vscode-editor-font-family, Menlo, Consolas, Monaco, monospace) !important;
+}
+
+.PlaygroundEditorTheme__code {
+  background-color: var(--vscode-textCodeBlock-background) !important;
+  font-family: var(--vscode-editor-font-family, Menlo, Consolas, Monaco, monospace) !important;
+}
+
+.PlaygroundEditorTheme__code:before {
+  background-color: var(--vscode-editorLineNumber-foreground, #858585) !important;
+  background-color: transparent !important;
+  border-right: 1px solid var(--vscode-editorWidget-border) !important;
+  color: var(--vscode-editorLineNumber-foreground) !important;
+}
+
+.PlaygroundEditorTheme__tokenComment { color: var(--vscode-editor-foreground, slategray) !important; opacity: 0.6; }
+.PlaygroundEditorTheme__tokenPunctuation { color: var(--vscode-editor-foreground) !important; opacity: 0.7; }
+
+.PlaygroundEditorTheme__blockCursor:after {
+  border-top-color: var(--vscode-editorCursor-foreground, var(--vscode-editor-foreground)) !important;
+}
+
+/* Table */
+.PlaygroundEditorTheme__tableCell {
+  border-color: var(--vscode-editorWidget-border, #bbb) !important;
+}
+
+.PlaygroundEditorTheme__tableCellHeader {
+  background-color: var(--vscode-editorWidget-background) !important;
+}
+
+.PlaygroundEditorTheme__tableFrozenRow tr:nth-of-type(1) > td {
+  background-color: var(--vscode-editor-background) !important;
+}
+
+.PlaygroundEditorTheme__tableFrozenRow tr:nth-of-type(1) > th {
+  background-color: var(--vscode-editorWidget-background) !important;
+}
+
+.PlaygroundEditorTheme__tableFrozenRow tr:nth-of-type(1) > th:after,
+.PlaygroundEditorTheme__tableFrozenRow tr:nth-of-type(1) > td:after {
+  border-bottom-color: var(--vscode-editorWidget-border) !important;
+}
+
+.PlaygroundEditorTheme__tableFrozenColumn tr > td:first-child {
+  background-color: var(--vscode-editor-background) !important;
+}
+
+.PlaygroundEditorTheme__tableFrozenColumn tr > th:first-child {
+  background-color: var(--vscode-editorWidget-background) !important;
+}
+
+.PlaygroundEditorTheme__tableFrozenColumn tr > :first-child::after {
+  border-right-color: var(--vscode-editorWidget-border) !important;
+}
+
+.PlaygroundEditorTheme__tableRowStriping tr:nth-child(even),
+.PlaygroundEditorTheme__tableFrozenColumn
+  .PlaygroundEditorTheme__table.PlaygroundEditorTheme__tableRowStriping
+  tr:nth-child(even) > td:first-child {
+  background-color: var(--vscode-list-hoverBackground) !important;
+}
+
+.PlaygroundEditorTheme__tableAddColumns,
+.PlaygroundEditorTheme__tableAddRows {
+  background-color: var(--vscode-editorWidget-background) !important;
+}
+
+.PlaygroundEditorTheme__tableAddColumns:hover,
+.PlaygroundEditorTheme__tableAddRows:hover {
+  background-color: var(--vscode-list-hoverBackground) !important;
+}
+
+.PlaygroundEditorTheme__tableCellActionButton {
+  background-color: var(--vscode-editorWidget-background) !important;
+  color: var(--vscode-foreground) !important;
+}
+
+.PlaygroundEditorTheme__tableCellActionButton:hover {
+  background-color: var(--vscode-list-hoverBackground) !important;
+}
+
+/* Context menu */
+.PlaygroundEditorTheme__contextMenu {
+  background: var(--vscode-menu-background) !important;
+  border-color: var(--vscode-menu-border, var(--vscode-editorWidget-border)) !important;
+  box-shadow: 0 2px 8px var(--vscode-widget-shadow, rgba(0,0,0,0.36)) !important;
+}
+
+.PlaygroundEditorTheme__contextMenuItem {
+  background-color: var(--vscode-menu-background) !important;
+  color: var(--vscode-menu-foreground, var(--vscode-foreground)) !important;
+}
+
+.PlaygroundEditorTheme__contextMenuItem.open,
+.PlaygroundEditorTheme__contextMenuItem:focus,
+.PlaygroundEditorTheme__contextMenuItem:not([disabled]):active {
+  background: var(--vscode-menu-selectionBackground, var(--vscode-list-hoverBackground)) !important;
+  color: var(--vscode-menu-selectionForeground, var(--vscode-foreground)) !important;
+}
+
+.PlaygroundEditorTheme__contextMenuItem:disabled {
+  background: var(--vscode-menu-background) !important;
+  color: var(--vscode-disabledForeground) !important;
+}
+
+/* Layout items */
+.PlaygroundEditorTheme__layoutItem {
+  border-color: var(--vscode-editorWidget-border) !important;
+}
+
+/* HR */
+.PlaygroundEditorTheme__hr:after {
+  background-color: var(--vscode-editorWidget-border) !important;
+}
+
+/* Checkbox lists */
+.PlaygroundEditorTheme__listItemUnchecked:before {
+  border-color: var(--vscode-foreground) !important;
+}
+
+.PlaygroundEditorTheme__listItemUnchecked:focus:before,
+.PlaygroundEditorTheme__listItemChecked:focus:before {
+  box-shadow: 0 0 0 2px var(--vscode-focusBorder) !important;
+}
+
+/* Autocomplete */
+.PlaygroundEditorTheme__autocomplete {
+  color: var(--vscode-editorGhostText-foreground, #999) !important;
+}
+
+/* Selection */
+::selection {
+  background: var(--vscode-editor-selectionBackground) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   FLOATING TOOLBAR
+   ═══════════════════════════════════════════════════════════════════ */
+
+.floating-text-format-popup {
+  background: var(--vscode-editorWidget-background) !important;
+  box-shadow: 0 2px 8px var(--vscode-widget-shadow, rgba(0,0,0,0.36)) !important;
+  border: 1px solid var(--vscode-editorWidget-border) !important;
+}
+
+.floating-text-format-popup button.popup-item.active {
+  background-color: var(--vscode-button-background) !important;
+}
+
+.floating-text-format-popup .popup-item:hover:not([disabled]) {
+  background-color: var(--vscode-list-hoverBackground) !important;
+}
+
+.floating-text-format-popup select.popup-item {
+  color: var(--vscode-foreground) !important;
+}
+
+.floating-text-format-popup .popup-item .text {
+  color: var(--vscode-foreground) !important;
+}
+
+.floating-text-format-popup .divider {
+  background-color: var(--vscode-editorWidget-border) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   LINK EDITOR
+   ═══════════════════════════════════════════════════════════════════ */
+
+.link-editor {
+  background-color: var(--vscode-editorWidget-background) !important;
+  box-shadow: 0 2px 8px var(--vscode-widget-shadow, rgba(0,0,0,0.36)) !important;
+  border: 1px solid var(--vscode-editorWidget-border) !important;
+}
+
+.link-editor .button.hovered {
+  background-color: var(--vscode-list-hoverBackground) !important;
+}
+
+.link-editor .link-input {
+  background: var(--vscode-input-background) !important;
+  color: var(--vscode-input-foreground) !important;
+  border-color: var(--vscode-input-border) !important;
+}
+
+.link-editor .link-input a {
+  color: var(--vscode-textLink-foreground) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   ACTIONS BAR
+   ═══════════════════════════════════════════════════════════════════ */
+
+.actions {
+  background: var(--vscode-editor-background) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   TREE VIEW / DEBUG
+   ═══════════════════════════════════════════════════════════════════ */
+
+pre {
+  background: var(--vscode-textCodeBlock-background, #222) !important;
+  color: var(--vscode-editor-foreground) !important;
+}
+
+.tree-view-output {
+  background: var(--vscode-textCodeBlock-background, #222) !important;
+  color: var(--vscode-editor-foreground) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   COLLAPSIBLE
+   ═══════════════════════════════════════════════════════════════════ */
+
+.Collapsible__container {
+  background: var(--vscode-editor-background) !important;
+  border-color: var(--vscode-editorWidget-border) !important;
+}
+
+.Collapsible__title:before {
+  border-left-color: var(--vscode-foreground) !important;
+}
+
+.Collapsible__container[open] > .Collapsible__title:before {
+  border-top-color: var(--vscode-foreground) !important;
+  border-left-color: transparent !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   CODE ACTION MENU
+   ═══════════════════════════════════════════════════════════════════ */
+
+.code-action-menu-container {
+  color: var(--vscode-descriptionForeground) !important;
+}
+
+.code-action-menu-container button.menu-item {
+  color: var(--vscode-descriptionForeground) !important;
+}
+
+.code-action-menu-container button.menu-item i.format {
+  color: var(--vscode-descriptionForeground) !important;
+}
+
+.code-action-menu-container .prettier-wrapper .code-error-tips {
+  background: var(--vscode-editorWidget-background) !important;
+  color: var(--vscode-foreground) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   COMMENT PLUGIN
+   ═══════════════════════════════════════════════════════════════════ */
+
+.CommentPlugin_AddCommentBox {
+  background-color: var(--vscode-editorWidget-background) !important;
+}
+
+.CommentPlugin_AddCommentBox_button:hover {
+  background-color: var(--vscode-list-hoverBackground) !important;
+}
+
+.CommentPlugin_CommentInputBox {
+  background-color: var(--vscode-editorWidget-background) !important;
+}
+
+.CommentPlugin_CommentInputBox::before {
+  border-color: transparent transparent var(--vscode-editorWidget-background) var(--vscode-editorWidget-background) !important;
+}
+
+.CommentPlugin_CommentInputBox_Button.primary {
+  background-color: var(--vscode-button-background) !important;
+  color: var(--vscode-button-foreground) !important;
+}
+
+.CommentPlugin_CommentInputBox_Button.primary:hover {
+  background-color: var(--vscode-button-hoverBackground) !important;
+}
+
+.CommentPlugin_CommentInputBox_Button[disabled] {
+  background-color: var(--vscode-button-secondaryBackground) !important;
+  color: var(--vscode-disabledForeground) !important;
+}
+
+.CommentPlugin_CommentInputBox_Button[disabled]:hover {
+  background-color: var(--vscode-button-secondaryBackground) !important;
+}
+
+.CommentPlugin_CommentInputBox_Editor {
+  border-color: var(--vscode-input-border) !important;
+  background-color: var(--vscode-input-background) !important;
+  color: var(--vscode-input-foreground) !important;
+  caret-color: var(--vscode-editorCursor-foreground) !important;
+}
+
+.CommentPlugin_CommentInputBox_Editor:focus {
+  outline-color: var(--vscode-focusBorder) !important;
+}
+
+.CommentPlugin_ShowCommentsButton {
+  background-color: var(--vscode-button-secondaryBackground) !important;
+}
+
+.CommentPlugin_ShowCommentsButton.active {
+  background-color: var(--vscode-button-background) !important;
+}
+
+.CommentPlugin_CommentsPanel {
+  background-color: var(--vscode-editorWidget-background) !important;
+}
+
+.CommentPlugin_CommentsPanel_Heading {
+  border-bottom-color: var(--vscode-editorWidget-border) !important;
+  color: var(--vscode-foreground) !important;
+}
+
+.CommentPlugin_CommentsPanel_Editor {
+  border-color: var(--vscode-input-border) !important;
+  background-color: var(--vscode-input-background) !important;
+  color: var(--vscode-input-foreground) !important;
+  caret-color: var(--vscode-editorCursor-foreground) !important;
+}
+
+.CommentPlugin_CommentsPanel_Empty {
+  color: var(--vscode-descriptionForeground) !important;
+}
+
+.CommentPlugin_CommentsPanel_List_Comment p {
+  color: var(--vscode-foreground) !important;
+}
+
+.CommentPlugin_CommentsPanel_List_Details {
+  color: var(--vscode-foreground) !important;
+}
+
+.CommentPlugin_CommentsPanel_List_Comment_Time {
+  color: var(--vscode-descriptionForeground) !important;
+}
+
+.CommentPlugin_CommentsPanel_List_Thread {
+  border-color: var(--vscode-editorWidget-border) !important;
+}
+
+.CommentPlugin_CommentsPanel_List_Thread.interactive:hover,
+.CommentPlugin_CommentsPanel_List_Thread.active {
+  background-color: var(--vscode-list-hoverBackground) !important;
+}
+
+.CommentPlugin_CommentsPanel_List_Thread.active {
+  border-left-color: var(--vscode-editorWidget-border) !important;
+}
+
+.CommentPlugin_CommentsPanel_List_Thread_QuoteBox {
+  color: var(--vscode-descriptionForeground) !important;
+}
+
+.CommentPlugin_CommentsPanel_List_Thread_Quote span {
+  color: var(--vscode-editor-foreground) !important;
+}
+
+.CommentPlugin_CommentsPanel_List_Thread_Comments .CommentPlugin_CommentsPanel_List_Comment {
+  border-left-color: var(--vscode-editorWidget-border) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   DRAGGABLE BLOCK
+   ═══════════════════════════════════════════════════════════════════ */
+
+.draggable-block-menu .icon:hover {
+  background-color: var(--vscode-list-hoverBackground) !important;
+}
+
+.draggable-block-target-line {
+  background: var(--vscode-focusBorder) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   TABLE HOVER ACTIONS
+   ═══════════════════════════════════════════════════════════════════ */
+
+.floating-add-indicator,
+.floating-filter-indicator,
+.floating-drag-indicator {
+  background-color: var(--vscode-editorWidget-background) !important;
+  border-color: var(--vscode-editorWidget-border) !important;
+}
+
+.floating-add-indicator:hover,
+.floating-filter-indicator:hover,
+.floating-drag-indicator:hover {
+  background-color: var(--vscode-list-hoverBackground) !important;
+}
+
+.floating-sort-menu__item {
+  color: var(--vscode-foreground) !important;
+}
+
+.floating-sort-menu__item:hover {
+  background-color: var(--vscode-list-hoverBackground) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   VERSIONS PLUGIN
+   ═══════════════════════════════════════════════════════════════════ */
+
+.VersionsPlugin_VersionList {
+  border-color: var(--vscode-editorWidget-border) !important;
+}
+
+.VersionsPlugin_VersionItem {
+  background-color: var(--vscode-editor-background) !important;
+  color: var(--vscode-foreground) !important;
+  border-bottom-color: var(--vscode-editorWidget-border) !important;
+}
+
+.VersionsPlugin_VersionItem:hover:not(:disabled) {
+  background-color: var(--vscode-list-hoverBackground) !important;
+}
+
+.VersionsPlugin_VersionItem--selected {
+  background-color: var(--vscode-list-activeSelectionBackground) !important;
+  color: var(--vscode-list-activeSelectionForeground) !important;
+}
+
+.VersionsPlugin_VersionItem:disabled {
+  color: var(--vscode-disabledForeground) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   TABLE OF CONTENTS
+   ═══════════════════════════════════════════════════════════════════ */
+
+.table-of-contents {
+  color: var(--vscode-descriptionForeground) !important;
+  background: var(--vscode-editor-background) !important;
+}
+
+.selected-heading {
+  color: var(--vscode-textLink-foreground) !important;
+}
+
+.selected-heading-wrapper::before {
+  background-color: var(--vscode-textLink-foreground) !important;
+  border-color: var(--vscode-editor-background) !important;
+}
+
+.first-heading {
+  color: var(--vscode-editor-foreground) !important;
+}
+
+.headings::before {
+  background-color: var(--vscode-editorWidget-border) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   POLL NODE
+   ═══════════════════════════════════════════════════════════════════ */
+
+.PollNode__container {
+  border-color: var(--vscode-editorWidget-border) !important;
+  background-color: var(--vscode-editor-background) !important;
+}
+
+.PollNode__heading {
+  color: var(--vscode-foreground) !important;
+}
+
+.PollNode__optionInputWrapper {
+  border-color: var(--vscode-button-background) !important;
+}
+
+.PollNode__optionInput {
+  color: var(--vscode-button-background) !important;
+}
+
+.PollNode__optionInput::placeholder {
+  color: var(--vscode-input-placeholderForeground) !important;
+}
+
+.PollNode__optionInputVotes {
+  background-color: var(--vscode-list-hoverBackground) !important;
+}
+
+.PollNode__optionCheckboxWrapper {
+  border-color: var(--vscode-foreground) !important;
+}
+
+.PollNode__optionDelete:hover {
+  background-color: var(--vscode-list-hoverBackground) !important;
+}
+
+.PollNode__optionDelete:before,
+.PollNode__optionDelete:after {
+  background-color: var(--vscode-descriptionForeground) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   IMAGE NODE
+   ═══════════════════════════════════════════════════════════════════ */
+
+.ImageNode__contentEditable {
+  caret-color: var(--vscode-editorCursor-foreground) !important;
+}
+
+.ImageNode__placeholder {
+  color: var(--vscode-input-placeholderForeground) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   STICKY NODE
+   ═══════════════════════════════════════════════════════════════════ */
+
+.StickyNode__contentEditable {
+  caret-color: var(--vscode-editorCursor-foreground) !important;
+}
+
+.StickyNode__placeholder {
+  color: var(--vscode-input-placeholderForeground) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   DATE TIME NODE
+   ═══════════════════════════════════════════════════════════════════ */
+
+.dateTimePill {
+  background: var(--vscode-badge-background) !important;
+  border-color: var(--vscode-badge-background) !important;
+  color: var(--vscode-badge-foreground) !important;
+}
+
+.dateTimePill:hover {
+  background: var(--vscode-list-hoverBackground) !important;
+}
+
+.dateTimePicker {
+  background: var(--vscode-editorWidget-background) !important;
+  border-color: var(--vscode-editorWidget-border) !important;
+}
+
+.rdp-root {
+  --rdp-accent-color: var(--vscode-button-background) !important;
+  --rdp-accent-background-color: var(--vscode-list-hoverBackground) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   PAGE BREAK
+   ═══════════════════════════════════════════════════════════════════ */
+
+[type='page-break'] {
+  border-color: var(--vscode-editorWidget-border) !important;
+  background-color: var(--vscode-editorWidget-background) !important;
+}
+
+[type='page-break']::after {
+  border-color: var(--vscode-editorWidget-border) !important;
+  background-color: var(--vscode-editorWidget-background) !important;
+  color: var(--vscode-descriptionForeground) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   COLOR PICKER
+   ═══════════════════════════════════════════════════════════════════ */
+
+.color-picker-basic-color button {
+  border-color: var(--vscode-editorWidget-border) !important;
+}
+
+.color-picker-color {
+  border-color: var(--vscode-editorWidget-border) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   EQUATION EDITOR
+   ═══════════════════════════════════════════════════════════════════ */
+
+.EquationEditor_inputBackground {
+  background-color: var(--vscode-textCodeBlock-background) !important;
+}
+
+.EquationEditor_dollarSign {
+  color: var(--vscode-descriptionForeground) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   EXCALIDRAW MODAL
+   ═══════════════════════════════════════════════════════════════════ */
+
+.ExcalidrawModal__overlay {
+  background-color: rgba(0, 0, 0, 0.5) !important;
+}
+
+.ExcalidrawModal__actions button {
+  background-color: var(--vscode-button-secondaryBackground) !important;
+  color: var(--vscode-button-secondaryForeground) !important;
+}
+
+.ExcalidrawModal__modal {
+  background-color: var(--vscode-editorWidget-background) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   EDITOR DEV BUTTONS (hide in VS Code)
+   ═══════════════════════════════════════════════════════════════════ */
+
+.editor-dev-button {
+  background-color: var(--vscode-button-secondaryBackground) !important;
+}
+
+.editor-dev-button:hover {
+  background-color: var(--vscode-button-secondaryHoverBackground) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   STICKY NOTES (keep themed colors, but fix shadows)
+   ═══════════════════════════════════════════════════════════════════ */
+
+.sticky-note {
+  border-color: var(--vscode-editorWidget-border) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   TABLE CELL RESIZER
+   ═══════════════════════════════════════════════════════════════════ */
+
+@media (pointer: coarse) {
+  .TableCellResizer__resizer {
+    background-color: var(--vscode-focusBorder) !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   SPECIAL / MISC
+   ═══════════════════════════════════════════════════════════════════ */
+
+.PlaygroundEditorTheme__specialText {
+  background-color: var(--vscode-editor-findMatchHighlightBackground, rgba(255, 212, 0, 0.3)) !important;
+}
+
+/* Icon filter for dark themes - invert dark icons to light */
+@media (prefers-color-scheme: dark) {
+  .toolbar-item i.format,
+  .floating-text-format-popup button.popup-item i.format,
+  .actions i,
+  .link-editor .button i,
+  .draggable-block-menu .icon,
+  i.chevron-down,
+  .code-action-menu-container button.menu-item i.format {
+    filter: invert(1);
+  }
+}
+
+/* VS Code provides a body class for dark themes */
+body[data-vscode-theme-kind="vscode-dark"] .toolbar-item i.format,
+body[data-vscode-theme-kind="vscode-dark"] .floating-text-format-popup button.popup-item i.format,
+body[data-vscode-theme-kind="vscode-dark"] .actions i,
+body[data-vscode-theme-kind="vscode-dark"] .link-editor .button i,
+body[data-vscode-theme-kind="vscode-dark"] .draggable-block-menu .icon,
+body[data-vscode-theme-kind="vscode-dark"] i.chevron-down,
+body[data-vscode-theme-kind="vscode-dark"] .code-action-menu-container button.menu-item i.format,
+body[data-vscode-theme-kind="vscode-dark"] .floating-add-indicator,
+body[data-vscode-theme-kind="vscode-dark"] .floating-filter-indicator,
+body[data-vscode-theme-kind="vscode-dark"] .floating-drag-indicator,
+body[data-vscode-theme-kind="vscode-dark"] .PlaygroundEditorTheme__tableAddColumns:after,
+body[data-vscode-theme-kind="vscode-dark"] .PlaygroundEditorTheme__tableAddRows:after,
+body[data-vscode-theme-kind="vscode-dark"] i.add-comment,
+body[data-vscode-theme-kind="vscode-dark"] i.comments,
+body[data-vscode-theme-kind="vscode-dark"] i.send,
+body[data-vscode-theme-kind="vscode-dark"] .draggable-block-menu .icon-plus {
+  filter: invert(1);
+}
+
+body[data-vscode-theme-kind="vscode-high-contrast"] .toolbar-item i.format,
+body[data-vscode-theme-kind="vscode-high-contrast"] .floating-text-format-popup button.popup-item i.format,
+body[data-vscode-theme-kind="vscode-high-contrast"] .actions i,
+body[data-vscode-theme-kind="vscode-high-contrast"] .link-editor .button i,
+body[data-vscode-theme-kind="vscode-high-contrast"] .draggable-block-menu .icon,
+body[data-vscode-theme-kind="vscode-high-contrast"] i.chevron-down,
+body[data-vscode-theme-kind="vscode-high-contrast"] .code-action-menu-container button.menu-item i.format,
+body[data-vscode-theme-kind="vscode-high-contrast"] .floating-add-indicator,
+body[data-vscode-theme-kind="vscode-high-contrast"] .floating-filter-indicator,
+body[data-vscode-theme-kind="vscode-high-contrast"] .floating-drag-indicator,
+body[data-vscode-theme-kind="vscode-high-contrast"] .PlaygroundEditorTheme__tableAddColumns:after,
+body[data-vscode-theme-kind="vscode-high-contrast"] .PlaygroundEditorTheme__tableAddRows:after,
+body[data-vscode-theme-kind="vscode-high-contrast"] i.add-comment,
+body[data-vscode-theme-kind="vscode-high-contrast"] i.comments,
+body[data-vscode-theme-kind="vscode-high-contrast"] i.send,
+body[data-vscode-theme-kind="vscode-high-contrast"] .draggable-block-menu .icon-plus {
+  filter: invert(1);
+}

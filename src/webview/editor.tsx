@@ -31,6 +31,9 @@ import {
 import PlaygroundApp from "./playground/App";
 import { PLAYGROUND_TRANSFORMERS } from "./playground/plugins/MarkdownTransformers";
 
+// VS Code theme overrides — MUST be imported last to override all playground CSS
+import "./vscode-theme-overrides.css";
+
 // Our custom transformers that improve on the playground's defaults
 import {
   $createTableCellNode,
