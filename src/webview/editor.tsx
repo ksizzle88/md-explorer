@@ -78,6 +78,7 @@ import { HorizontalRulePlugin } from "@lexical/react/LexicalHorizontalRulePlugin
 import { INSERT_HORIZONTAL_RULE_COMMAND } from "@lexical/react/LexicalHorizontalRuleNode";
 import { $isLinkNode, TOGGLE_LINK_COMMAND } from "@lexical/link";
 import { ImageNode, $createImageNode, $isImageNode } from "./ImageNode";
+import DragDropPlugin from "./DragDropPlugin";
 
 // Acquire VS Code API
 declare function acquireVsCodeApi(): {
@@ -1717,6 +1718,7 @@ function Editor() {
           <SyncPlugin />
           <TrailingParagraphPlugin />
           <ClickToEndPlugin />
+          <DragDropPlugin />
         </div>
       </div>
       <StatusBarPlugin isFocusMode={isFocusMode} />

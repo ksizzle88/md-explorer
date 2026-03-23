@@ -519,6 +519,54 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
       font-size: 11px;
       opacity: 0.7;
     }
+    /* Drag-and-drop block reordering */
+    .drag-handle {
+      position: absolute;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      cursor: grab;
+      color: var(--vscode-descriptionForeground, #888);
+      font-size: 16px;
+      border-radius: 4px;
+      opacity: 0;
+      transition: opacity 0.1s ease;
+      z-index: 5;
+      user-select: none;
+      line-height: 1;
+      letter-spacing: 0;
+    }
+    .drag-handle[style*="display: flex"] {
+      opacity: 1;
+    }
+    .drag-handle:hover {
+      background: var(--vscode-toolbar-hoverBackground, rgba(90, 93, 94, 0.31));
+      color: var(--vscode-foreground, var(--vscode-editor-foreground));
+      cursor: grab;
+    }
+    .drag-handle:active {
+      cursor: grabbing;
+    }
+    .drop-indicator {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--vscode-focusBorder, #007fd4);
+      z-index: 5;
+      pointer-events: none;
+      transition: top 0.05s ease;
+      border-radius: 1px;
+    }
+    @keyframes drag-drop-land {
+      from { background: color-mix(in srgb, var(--vscode-focusBorder, #007fd4) 25%, transparent); }
+      to { background: transparent; }
+    }
+    .drag-drop-landed {
+      animation: drag-drop-land 0.4s ease-out;
+    }
     /* Focus mode: dim all top-level blocks except the active one */
     .focus-mode > p,
     .focus-mode > h1,
