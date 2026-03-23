@@ -42,3 +42,31 @@ export function splitTableRow(inner: string): string[] {
   cells.push(current.trim());
   return cells;
 }
+
+/**
+ * Parse markdown table lines into an array of data rows (arrays of cell strings).
+ *
+ * Skips only the FIRST divider row (the header/body separator).
+ * Subsequent rows that happen to look like dividers (e.g. a cell containing
+ * just "-") are treated as data rows, preserving their content.
+ */
+export function parseTableDataRows(
+  tableLines: string[],
+  rowRegExp: RegExp,
+  dividerRegExp: RegExp,
+): string[][] {
+  const dataRows: string[][] = [];
+  let dividerFound = false;
+  for (const line of tableLines) {
+    if (!dividerFound && dividerRegExp.test(line)) {
+      dividerFound = true;
+      continue;
+    }
+    const match = line.match(rowRegExp);
+    if (match) {
+      const cells = splitTableRow(match[1]).map((c) => unescapeTableCell(c));
+      dataRows.push(cells);
+    }
+  }
+  return dataRows;
+}

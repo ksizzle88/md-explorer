@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { escapeTableCell, unescapeTableCell, splitTableRow } from "./tableUtils";
+import { escapeTableCell, unescapeTableCell, splitTableRow, parseTableDataRows } from "./tableUtils";
 
 describe("escapeTableCell", () => {
   it("returns plain text unchanged", () => {
@@ -100,6 +100,93 @@ describe("backslash handling", () => {
     // vs "a\\|b" = cell "a\\|b" (escaped pipe, not a delimiter)
     expect(splitTableRow(" a\\\\ | b ")).toEqual(["a\\\\", "b"]);
     expect(splitTableRow(" a\\|b ")).toEqual(["a\\|b"]);
+  });
+});
+
+// ─── BUG: data rows containing only dashes are silently dropped ────────
+//
+// The TABLE_ROW_DIVIDER_REG_EXP matches any row where ALL cells contain
+// only dashes (with optional colons).  The old import logic skipped EVERY
+// line that matched the divider regex, not just the first one.  This means
+// a data row like `| - |` (cell value is a dash) gets treated as a
+// second divider and is silently dropped from the parsed table.
+
+const TABLE_ROW_REG_EXP = /^(?:\|)(.+)(?:\|)\s*$/;
+const TABLE_ROW_DIVIDER_REG_EXP = /^(\| ?:?-+:? ?)+\|\s*$/;
+
+describe("BUG: dash-only data rows dropped by old logic", () => {
+  it("old logic drops a data row that looks like a divider", () => {
+    const tableLines = [
+      "| Status |",
+      "| --- |",
+      "| - |",
+    ];
+
+    // Simulate the OLD (buggy) logic: skip ALL divider-matching lines
+    const dataRowsOld: string[][] = [];
+    for (const line of tableLines) {
+      if (TABLE_ROW_DIVIDER_REG_EXP.test(line)) continue;
+      const match = line.match(TABLE_ROW_REG_EXP);
+      if (match) {
+        const cells = splitTableRow(match[1]).map((c) => unescapeTableCell(c));
+        dataRowsOld.push(cells);
+      }
+    }
+
+    // The old logic only produces 1 row (header) — the "| - |" row is lost!
+    expect(dataRowsOld).toEqual([["Status"]]);
+    // Missing: ["−"] should be the second row
+  });
+
+  it("fixed parseTableDataRows preserves dash-only data rows", () => {
+    const tableLines = [
+      "| Status |",
+      "| --- |",
+      "| - |",
+    ];
+
+    const dataRows = parseTableDataRows(tableLines, TABLE_ROW_REG_EXP, TABLE_ROW_DIVIDER_REG_EXP);
+
+    // Should have 2 rows: header "Status" and data "-"
+    expect(dataRows).toEqual([["Status"], ["-"]]);
+  });
+
+  it("fixed parseTableDataRows preserves multi-cell dash-only data rows", () => {
+    const tableLines = [
+      "| A | B |",
+      "| --- | --- |",
+      "| x | y |",
+      "| - | -- |",
+    ];
+
+    const dataRows = parseTableDataRows(tableLines, TABLE_ROW_REG_EXP, TABLE_ROW_DIVIDER_REG_EXP);
+
+    expect(dataRows).toEqual([["A", "B"], ["x", "y"], ["-", "--"]]);
+  });
+
+  it("fixed parseTableDataRows still skips the real divider", () => {
+    const tableLines = [
+      "| Header |",
+      "| --- |",
+      "| data |",
+    ];
+
+    const dataRows = parseTableDataRows(tableLines, TABLE_ROW_REG_EXP, TABLE_ROW_DIVIDER_REG_EXP);
+
+    // Divider row is skipped, header and data are preserved
+    expect(dataRows).toEqual([["Header"], ["data"]]);
+  });
+
+  it("fixed parseTableDataRows handles alignment dividers", () => {
+    const tableLines = [
+      "| Left | Center | Right |",
+      "| :--- | :---: | ---: |",
+      "| a | b | c |",
+    ];
+
+    const dataRows = parseTableDataRows(tableLines, TABLE_ROW_REG_EXP, TABLE_ROW_DIVIDER_REG_EXP);
+
+    expect(dataRows).toEqual([["Left", "Center", "Right"], ["a", "b", "c"]]);
   });
 });
 

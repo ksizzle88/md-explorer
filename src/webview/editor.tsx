@@ -73,7 +73,7 @@ import {
 } from "lexical";
 
 import { ImageNode, $isImageNode, $createImageNode } from "./ImageNode";
-import { escapeTableCell, unescapeTableCell, splitTableRow } from "./tableUtils";
+import { escapeTableCell, unescapeTableCell, splitTableRow, parseTableDataRows } from "./tableUtils";
 import { escapeImageAltText, unescapeImageAltText } from "./imageUtils";
 
 // Plugins (ported from Lexical Playground + our originals)
@@ -160,15 +160,7 @@ const TABLE_TRANSFORMER = {
 
     if (tableLines.length < 2) return null;
 
-    const dataRows: string[][] = [];
-    for (const line of tableLines) {
-      if (TABLE_ROW_DIVIDER_REG_EXP.test(line)) continue;
-      const match = line.match(TABLE_ROW_REG_EXP);
-      if (match) {
-        const cells = splitTableRow(match[1]).map((c) => unescapeTableCell(c));
-        dataRows.push(cells);
-      }
-    }
+    const dataRows = parseTableDataRows(tableLines, TABLE_ROW_REG_EXP, TABLE_ROW_DIVIDER_REG_EXP);
 
     if (dataRows.length === 0) return null;
 
