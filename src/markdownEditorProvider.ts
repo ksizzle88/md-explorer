@@ -52,7 +52,9 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
     // Listen for changes from the webview
     const messageDisposable = webviewPanel.webview.onDidReceiveMessage(
       (msg) => {
-        if (msg.type === "edit") {
+        if (msg.type === "ready") {
+          updateWebview();
+        } else if (msg.type === "edit") {
           const edit = new vscode.WorkspaceEdit();
           edit.replace(
             document.uri,
@@ -79,13 +81,6 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
     webviewPanel.onDidDispose(() => {
       messageDisposable.dispose();
       changeDisposable.dispose();
-    });
-
-    // Send initial content once webview is ready
-    webviewPanel.webview.onDidReceiveMessage((msg) => {
-      if (msg.type === "ready") {
-        updateWebview();
-      }
     });
   }
 

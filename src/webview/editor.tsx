@@ -130,7 +130,6 @@ const TABLE_TRANSFORMER = {
     lines,
     rootNode,
     startLineIndex,
-    startMatch,
   }: {
     lines: string[];
     rootNode: ElementNode;
