@@ -589,38 +589,6 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
       opacity: 1;
       transition: opacity 0.2s ease;
     }
-    /* Status bar */
-    .status-bar {
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      padding: 2px 12px;
-      border-top: 1px solid var(--vscode-panel-border, #444);
-      background: var(--vscode-statusBar-background, var(--vscode-editor-background));
-      color: var(--vscode-statusBar-foreground, var(--vscode-descriptionForeground, #999));
-      font-size: 11px;
-      flex-shrink: 0;
-      min-height: 24px;
-      user-select: none;
-    }
-    .status-bar-items {
-      display: flex;
-      gap: 0;
-      align-items: center;
-    }
-    .status-bar-item {
-      padding: 0 8px;
-      border-right: 1px solid var(--vscode-panel-border, #444);
-      line-height: 1;
-    }
-    .status-bar-item:last-child {
-      border-right: none;
-      padding-right: 0;
-    }
-    .status-bar-paragraph {
-      opacity: 0.8;
-      font-style: italic;
-    }
   </style>
 </head>
 <body>
