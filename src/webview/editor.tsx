@@ -42,6 +42,7 @@ import {
 } from "@lexical/markdown";
 
 import { escapeTableCell, unescapeTableCell, splitTableRow } from "./tableUtils";
+import { escapeImageAltText, unescapeImageAltText } from "./imageUtils";
 
 import {
   $getRoot,
@@ -207,13 +208,13 @@ const IMAGE_TRANSFORMER = {
   dependencies: [ImageNode],
   export: (node: LexicalNode) => {
     if (!$isImageNode(node)) return null;
-    return `![${node.getAltText()}](${node.getSrc()})`;
+    return `![${escapeImageAltText(node.getAltText())}](${node.getSrc()})`;
   },
-  importRegExp: /!(?:\[([^\]]*)\])(?:\(((?:[^()]+|\([^()]*\))+)\))/,
-  regExp: /!(?:\[([^\]]*)\])(?:\(((?:[^()]+|\([^()]*\))+)\))$/,
+  importRegExp: /!(?:\[((?:[^\]\\]|\\.)*)\])(?:\(((?:[^()]+|\([^()]*\))+)\))/,
+  regExp: /!(?:\[((?:[^\]\\]|\\.)*)\])(?:\(((?:[^()]+|\([^()]*\))+)\))$/,
   replace: (textNode: TextNode, match: RegExpMatchArray) => {
     const [, altText, src] = match;
-    const imageNode = $createImageNode(src, altText || "");
+    const imageNode = $createImageNode(src, unescapeImageAltText(altText || ""));
     textNode.replace(imageNode);
   },
   trigger: ")",
