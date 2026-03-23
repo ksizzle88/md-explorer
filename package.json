@@ -2,7 +2,7 @@
   "name": "md-explorer",
   "displayName": "Markdown Explorer",
   "description": "Sidebar file explorer for markdown files across /workspace and /home/dev",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "publisher": "local",
   "engines": {
     "vscode": "^1.85.0"
@@ -26,8 +26,7 @@
       "md-explorer": [
         {
           "id": "mdExplorerFiles",
-          "name": "Markdown Files",
-          "type": "webview"
+          "name": "Markdown Files"
         }
       ]
     },
@@ -39,33 +38,41 @@
         "category": "Markdown Explorer"
       },
       {
-        "command": "mdExplorer.showFilter",
-        "title": "Show Filter",
+        "command": "mdExplorer.toggleMdOnly",
+        "title": "Toggle: Show All Files / Markdown Only",
         "icon": "$(filter)",
         "category": "Markdown Explorer"
       },
       {
-        "command": "mdExplorer.hideFilter",
-        "title": "Hide Filter",
-        "icon": "$(filter-filled)",
+        "command": "mdExplorer.newFile",
+        "title": "New Markdown File",
+        "icon": "$(new-file)",
         "category": "Markdown Explorer"
       },
       {
-        "command": "mdExplorer.showTree",
-        "title": "Tree View",
-        "icon": "$(list-tree)",
+        "command": "mdExplorer.newFolder",
+        "title": "New Folder",
+        "icon": "$(new-folder)",
         "category": "Markdown Explorer"
       },
       {
-        "command": "mdExplorer.showList",
-        "title": "List View",
-        "icon": "$(list-flat)",
+        "command": "mdExplorer.rename",
+        "title": "Rename",
         "category": "Markdown Explorer"
       },
       {
-        "command": "mdExplorer.collapseAll",
-        "title": "Collapse All",
-        "icon": "$(collapse-all)",
+        "command": "mdExplorer.delete",
+        "title": "Delete",
+        "category": "Markdown Explorer"
+      },
+      {
+        "command": "mdExplorer.revealInExplorer",
+        "title": "Reveal in File Explorer",
+        "category": "Markdown Explorer"
+      },
+      {
+        "command": "mdExplorer.copyRelativePath",
+        "title": "Copy Relative Path",
         "category": "Markdown Explorer"
       },
       {
@@ -89,34 +96,56 @@
     "menus": {
       "view/title": [
         {
-          "command": "mdExplorer.showFilter",
-          "when": "view == mdExplorerFiles && !mdExplorer.filterVisible",
+          "command": "mdExplorer.newFile",
+          "when": "view == mdExplorerFiles",
           "group": "navigation@1"
         },
         {
-          "command": "mdExplorer.hideFilter",
-          "when": "view == mdExplorerFiles && mdExplorer.filterVisible",
-          "group": "navigation@1"
-        },
-        {
-          "command": "mdExplorer.showList",
-          "when": "view == mdExplorerFiles && mdExplorer.viewMode != 'list'",
+          "command": "mdExplorer.newFolder",
+          "when": "view == mdExplorerFiles",
           "group": "navigation@2"
         },
         {
-          "command": "mdExplorer.showTree",
-          "when": "view == mdExplorerFiles && mdExplorer.viewMode == 'list'",
-          "group": "navigation@2"
-        },
-        {
-          "command": "mdExplorer.collapseAll",
-          "when": "view == mdExplorerFiles && mdExplorer.viewMode != 'list'",
+          "command": "mdExplorer.toggleMdOnly",
+          "when": "view == mdExplorerFiles",
           "group": "navigation@3"
         },
         {
           "command": "mdExplorer.refresh",
           "when": "view == mdExplorerFiles",
           "group": "navigation@4"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "mdExplorer.newFile",
+          "when": "view == mdExplorerFiles && viewItem == folder",
+          "group": "1_new@1"
+        },
+        {
+          "command": "mdExplorer.newFolder",
+          "when": "view == mdExplorerFiles && viewItem == folder",
+          "group": "1_new@2"
+        },
+        {
+          "command": "mdExplorer.rename",
+          "when": "view == mdExplorerFiles && viewItem =~ /^(folder|file|mdFile)$/",
+          "group": "2_edit@1"
+        },
+        {
+          "command": "mdExplorer.delete",
+          "when": "view == mdExplorerFiles && viewItem =~ /^(folder|file|mdFile)$/",
+          "group": "2_edit@2"
+        },
+        {
+          "command": "mdExplorer.copyRelativePath",
+          "when": "view == mdExplorerFiles && viewItem =~ /^(folder|file|mdFile)$/",
+          "group": "3_copy@1"
+        },
+        {
+          "command": "mdExplorer.revealInExplorer",
+          "when": "view == mdExplorerFiles && viewItem =~ /^(folder|file|mdFile)$/",
+          "group": "4_reveal@1"
         }
       ]
     }
