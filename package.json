@@ -125,6 +125,9 @@
     "compile": "tsc -p ./ && node esbuild.config.mjs",
     "watch": "tsc -watch -p ./",
     "build:webview": "node esbuild.config.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepackage": "npm test",
     "package": "npx @vscode/vsce package --no-dependencies"
   },
   "devDependencies": {
