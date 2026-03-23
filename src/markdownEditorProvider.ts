@@ -1,4 +1,6 @@
 import * as vscode from "vscode";
+import { execSync } from "child_process";
+import * as path from "path";
 
 export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
   public static readonly viewType = "mdExplorer.markdownEditor";
@@ -55,6 +57,13 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
       (msg) => {
         if (msg.type === "ready") {
           updateWebview();
+        } else if (msg.type === "requestSavedVersion") {
+          this.getSavedVersion(document).then((savedText) => {
+            webviewPanel.webview.postMessage({
+              type: "savedVersion",
+              text: savedText,
+            });
+          });
         } else if (msg.type === "edit") {
           isWebviewEdit = true;
           const edit = new vscode.WorkspaceEdit();
@@ -88,6 +97,37 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
       messageDisposable.dispose();
       changeDisposable.dispose();
     });
+  }
+
+  /**
+   * Get the last saved version of a document.
+   * Tries git HEAD first, falls back to the on-disk version.
+   */
+  private async getSavedVersion(
+    document: vscode.TextDocument
+  ): Promise<string> {
+    const filePath = document.uri.fsPath;
+
+    // Try to get the git HEAD version
+    try {
+      const cwd = path.dirname(filePath);
+      const relativePath = path.relative(cwd, filePath);
+      const gitContent = execSync(
+        `git show HEAD:${JSON.stringify(relativePath)}`,
+        { cwd, encoding: "utf-8", stdio: ["pipe", "pipe", "pipe"] }
+      );
+      return gitContent;
+    } catch {
+      // Not in a git repo or file not tracked — fall back to disk
+    }
+
+    // Fall back to what's on disk (the last saved version)
+    try {
+      const diskContent = await vscode.workspace.fs.readFile(document.uri);
+      return Buffer.from(diskContent).toString("utf-8");
+    } catch {
+      return "";
+    }
   }
 
   private getHtmlForWebview(
@@ -786,6 +826,141 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
     }
     .editor-nested-listitem {
       list-style-type: none;
+    }
+    /* Diff view overlay */
+    .diff-view-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 200;
+      background: var(--vscode-editor-background);
+      display: flex;
+      flex-direction: column;
+    }
+    .diff-view-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 16px;
+      border-bottom: 1px solid var(--vscode-panel-border, #444);
+      background: var(--vscode-editor-background);
+      flex-shrink: 0;
+    }
+    .diff-view-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--vscode-foreground);
+    }
+    .diff-view-stats {
+      margin-left: 12px;
+      font-weight: 400;
+    }
+    .diff-stat-added {
+      color: var(--vscode-gitDecoration-addedResourceForeground, #73c991);
+      margin-right: 8px;
+    }
+    .diff-stat-removed {
+      color: var(--vscode-gitDecoration-deletedResourceForeground, #c74e39);
+    }
+    .diff-view-no-changes {
+      font-weight: 400;
+      opacity: 0.7;
+    }
+    .diff-view-close-btn {
+      background: var(--vscode-button-secondaryBackground, #3a3d41);
+      color: var(--vscode-button-secondaryForeground, #fff);
+      border: none;
+      padding: 4px 12px;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 12px;
+      font-family: inherit;
+    }
+    .diff-view-close-btn:hover {
+      background: var(--vscode-button-secondaryHoverBackground, #45494e);
+    }
+    .diff-view-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .diff-view-panel-header {
+      display: flex;
+      border-bottom: 1px solid var(--vscode-panel-border, #444);
+      flex-shrink: 0;
+    }
+    .diff-panel-label {
+      flex: 1;
+      padding: 4px 16px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--vscode-descriptionForeground, #999);
+      font-weight: 600;
+    }
+    .diff-panel-label + .diff-panel-label {
+      border-left: 1px solid var(--vscode-panel-border, #444);
+    }
+    .diff-view-panels {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+    .diff-view-panel {
+      flex: 1;
+      overflow: auto;
+      font-family: var(--vscode-editor-font-family, 'Cascadia Code', 'Fira Code', Consolas, monospace);
+      font-size: var(--vscode-editor-font-size, 13px);
+      line-height: 1.5;
+    }
+    .diff-view-left {
+      border-right: 1px solid var(--vscode-panel-border, #444);
+    }
+    .diff-line {
+      display: flex;
+      white-space: pre;
+      min-height: 1.5em;
+    }
+    .diff-line-number {
+      display: inline-block;
+      min-width: 40px;
+      padding: 0 8px;
+      text-align: right;
+      color: var(--vscode-editorLineNumber-foreground, #858585);
+      user-select: none;
+      flex-shrink: 0;
+    }
+    .diff-line-marker {
+      display: inline-block;
+      width: 16px;
+      text-align: center;
+      user-select: none;
+      flex-shrink: 0;
+    }
+    .diff-line-content {
+      flex: 1;
+      padding-right: 8px;
+    }
+    .diff-line-added {
+      background: var(--vscode-diffEditor-insertedLineBackground, rgba(155, 185, 85, 0.2));
+    }
+    .diff-line-added .diff-line-marker {
+      color: var(--vscode-gitDecoration-addedResourceForeground, #73c991);
+    }
+    .diff-line-removed {
+      background: var(--vscode-diffEditor-removedLineBackground, rgba(255, 0, 0, 0.2));
+    }
+    .diff-line-removed .diff-line-marker {
+      color: var(--vscode-gitDecoration-deletedResourceForeground, #c74e39);
+    }
+    .diff-line-spacer {
+      background: var(--vscode-diffEditor-diagonalFill, rgba(128, 128, 128, 0.1));
+    }
+    .diff-line-unchanged {
+      background: transparent;
     }
   </style>
 </head>

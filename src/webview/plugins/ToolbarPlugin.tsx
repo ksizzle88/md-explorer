@@ -144,11 +144,15 @@ export default function ToolbarPlugin({
   onToggleFocusMode,
   isSourceMode,
   onToggleSourceMode,
+  isDiffMode,
+  onToggleDiffMode,
 }: {
   isFocusMode: boolean;
   onToggleFocusMode: () => void;
   isSourceMode: boolean;
   onToggleSourceMode: () => void;
+  isDiffMode: boolean;
+  onToggleDiffMode: () => void;
 }) {
   const [editor] = useLexicalComposerContext();
   const [canUndo, setCanUndo] = useState(false);
@@ -488,6 +492,13 @@ export default function ToolbarPlugin({
         title="View Markdown Source"
       >
         {"</>"}&#xFE0E; Src
+      </button>
+      <button
+        className={`toolbar-btn ${isDiffMode ? "active" : ""}`}
+        onClick={onToggleDiffMode}
+        title="Diff View (Ctrl+D)"
+      >
+        Diff
       </button>
     </div>
   );

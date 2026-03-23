@@ -85,6 +85,7 @@ import CodeBlockBehaviorPlugin from "./plugins/CodeBlockBehaviorPlugin";
 import KeyboardShortcutsPlugin from "./plugins/KeyboardShortcutsPlugin";
 import TableContextMenuPlugin from "./plugins/TableContextMenuPlugin";
 import DraggableBlockPlugin from "./plugins/DraggableBlockPlugin";
+import DiffViewPlugin from "./plugins/DiffViewPlugin";
 
 // ── VS Code API ─────────────────────────────────────────────────
 
@@ -94,6 +95,7 @@ declare function acquireVsCodeApi(): {
   setState(state: unknown): void;
 };
 const vscode = acquireVsCodeApi();
+(window as any).vscodeApi = vscode;
 
 // ── Custom Markdown Transformers ────────────────────────────────
 
@@ -588,7 +590,9 @@ const editorConfig = {
 function Editor() {
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [isSourceMode, setIsSourceMode] = useState(false);
+  const [isDiffMode, setIsDiffMode] = useState(false);
   const [sourceText, setSourceText] = useState("");
+  const [diffCurrentText, setDiffCurrentText] = useState("");
   const [floatingAnchorElem, setFloatingAnchorElem] =
     useState<HTMLDivElement | null>(null);
 
@@ -598,6 +602,14 @@ function Editor() {
   );
   const toggleSourceMode = useCallback(
     () => setIsSourceMode((prev) => !prev),
+    []
+  );
+  const toggleDiffMode = useCallback(
+    () => setIsDiffMode((prev) => !prev),
+    []
+  );
+  const closeDiffMode = useCallback(
+    () => setIsDiffMode(false),
     []
   );
 
@@ -614,6 +626,8 @@ function Editor() {
         onToggleFocusMode={toggleFocusMode}
         isSourceMode={isSourceMode}
         onToggleSourceMode={toggleSourceMode}
+        isDiffMode={isDiffMode}
+        onToggleDiffMode={toggleDiffMode}
       />
       <SourceModePlugin
         isSourceMode={isSourceMode}
@@ -667,8 +681,66 @@ function Editor() {
           </div>
         </div>
       )}
+      <DiffCapturePlugin isDiffMode={isDiffMode} onCapture={setDiffCurrentText} />
+      <DiffKeyboardPlugin onToggle={toggleDiffMode} />
+      {isDiffMode && (
+        <DiffViewPlugin
+          isActive={isDiffMode}
+          currentText={diffCurrentText}
+          onClose={closeDiffMode}
+        />
+      )}
     </LexicalComposer>
   );
+}
+
+// ── Diff Capture Plugin ─────────────────────────────────────
+// Captures current markdown text when diff mode is toggled on
+
+function DiffCapturePlugin({
+  isDiffMode,
+  onCapture,
+}: {
+  isDiffMode: boolean;
+  onCapture: (text: string) => void;
+}) {
+  const [editor] = useLexicalComposerContext();
+  const prevDiffMode = useRef(false);
+
+  useEffect(() => {
+    if (isDiffMode && !prevDiffMode.current) {
+      editor.getEditorState().read(() => {
+        const markdown = $convertToMarkdownString(ALL_TRANSFORMERS);
+        onCapture(markdown);
+      });
+    }
+    prevDiffMode.current = isDiffMode;
+  }, [isDiffMode, editor, onCapture]);
+
+  return null;
+}
+
+// ── Diff Keyboard Plugin ────────────────────────────────────
+// Handles Ctrl+D shortcut to toggle diff view
+
+function DiffKeyboardPlugin({ onToggle }: { onToggle: () => void }) {
+  const [editor] = useLexicalComposerContext();
+
+  useEffect(() => {
+    const root = editor.getRootElement();
+    if (!root) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const isCtrl = event.ctrlKey || event.metaKey;
+      if (isCtrl && event.key === "d") {
+        event.preventDefault();
+        onToggle();
+      }
+    };
+    root.addEventListener("keydown", handleKeyDown);
+    return () => root.removeEventListener("keydown", handleKeyDown);
+  }, [editor, onToggle]);
+
+  return null;
 }
 
 // ── Mount ───────────────────────────────────────────────────────
