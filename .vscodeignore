@@ -1,0 +1,11 @@
+.devcontainer/**
+.claudio/**
+src/**
+node_modules/**
+*.test.ts
+vitest.config.ts
+esbuild.config.mjs
+tsconfig.json
+.gitignore
+test.md
+*.vsix
