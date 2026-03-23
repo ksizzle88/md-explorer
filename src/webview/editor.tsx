@@ -208,8 +208,8 @@ const IMAGE_TRANSFORMER = {
     if (!$isImageNode(node)) return null;
     return `![${node.getAltText()}](${node.getSrc()})`;
   },
-  importRegExp: /!(?:\[([^\]]*)\])(?:\(([^)]+)\))/,
-  regExp: /!(?:\[([^\]]*)\])(?:\(([^)]+)\))$/,
+  importRegExp: /!(?:\[([^\]]*)\])(?:\(((?:[^()]+|\([^()]*\))+)\))/,
+  regExp: /!(?:\[([^\]]*)\])(?:\(((?:[^()]+|\([^()]*\))+)\))$/,
   replace: (textNode: TextNode, match: RegExpMatchArray) => {
     const [, altText, src] = match;
     const imageNode = $createImageNode(src, altText || "");
