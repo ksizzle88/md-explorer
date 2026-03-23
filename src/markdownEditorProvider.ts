@@ -38,6 +38,7 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
       scriptUri
     );
 
+    let isWebviewEdit = false;
     let isUpdatingFromExtension = false;
 
     // Send initial content to webview
@@ -55,6 +56,7 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
         if (msg.type === "ready") {
           updateWebview();
         } else if (msg.type === "edit") {
+          isWebviewEdit = true;
           const edit = new vscode.WorkspaceEdit();
           edit.replace(
             document.uri,
@@ -71,7 +73,11 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
     // Listen for document changes (e.g. from other editors or undo/redo)
     const changeDisposable = vscode.workspace.onDidChangeTextDocument((e) => {
       if (e.document.uri.toString() === document.uri.toString()) {
-        if (!isUpdatingFromExtension) {
+        if (isWebviewEdit) {
+          // This change originated from the webview — don't send it back
+          isWebviewEdit = false;
+        } else if (!isUpdatingFromExtension) {
+          // External change (other editor, undo from VS Code, etc.)
           updateWebview();
         }
         isUpdatingFromExtension = false;

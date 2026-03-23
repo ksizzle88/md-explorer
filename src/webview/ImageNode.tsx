@@ -7,6 +7,8 @@ import {
   SerializedLexicalNode,
   Spread,
   $getNodeByKey,
+  $createNodeSelection,
+  $setSelection,
   CLICK_COMMAND,
   COMMAND_PRIORITY_LOW,
   KEY_BACKSPACE_COMMAND,
@@ -136,6 +138,12 @@ function ImageComponent({
       CLICK_COMMAND,
       (event: MouseEvent) => {
         if (imageRef.current && imageRef.current.contains(event.target as Node)) {
+          // Update Lexical's selection to this node so keyboard commands work
+          editor.update(() => {
+            const nodeSelection = $createNodeSelection();
+            nodeSelection.add(nodeKey);
+            $setSelection(nodeSelection);
+          });
           setIsSelected(true);
           return true;
         }
@@ -146,7 +154,7 @@ function ImageComponent({
       COMMAND_PRIORITY_LOW
     );
     return unregister;
-  }, [editor]);
+  }, [editor, nodeKey]);
 
   useEffect(() => {
     if (!isSelected) return;

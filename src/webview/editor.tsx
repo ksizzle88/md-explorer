@@ -47,6 +47,7 @@ import {
   $getRoot,
   $createParagraphNode,
   $createTextNode,
+  $isParagraphNode,
   FORMAT_TEXT_COMMAND,
   UNDO_COMMAND,
   REDO_COMMAND,
@@ -1318,22 +1319,78 @@ function SlashCommandPlugin() {
 
 function SyncPlugin() {
   const [editor] = useLexicalComposerContext();
+  const isFirstUpdate = useRef(true);
 
   // Listen for messages from VS Code extension
   useEffect(() => {
     const handler = (event: MessageEvent) => {
       const msg = event.data;
       if (msg.type === "update") {
+        // On first load, just set the content. On subsequent external updates,
+        // save and restore cursor position as best we can.
+        const restoreCursor = !isFirstUpdate.current;
+        let savedOffset = 0;
+
+        if (restoreCursor) {
+          editor.getEditorState().read(() => {
+            const selection = $getSelection();
+            if ($isRangeSelection(selection)) {
+              // Compute the character offset from the start of the document
+              const anchor = selection.anchor;
+              const anchorNode = anchor.getNode();
+              const root = $getRoot();
+              const allText = root.getTextContent();
+              const nodeText = anchorNode.getTextContent();
+              // Find the position of this node's text in the full document
+              const nodeStart = allText.indexOf(nodeText);
+              if (nodeStart !== -1) {
+                savedOffset = nodeStart + anchor.offset;
+              }
+            }
+          });
+        }
+
         editor.update(
           () => {
             const root = $getRoot();
             root.clear();
             $convertFromMarkdownString(msg.text, ALL_TRANSFORMERS);
+
+            if (restoreCursor && savedOffset > 0) {
+              // Walk through text nodes to find the right position
+              const allNodes: TextNode[] = [];
+              const collectTextNodes = (node: LexicalNode) => {
+                if ($isTextNode(node)) {
+                  allNodes.push(node);
+                } else if ("getChildren" in node && typeof (node as ElementNode).getChildren === "function") {
+                  (node as ElementNode).getChildren().forEach(collectTextNodes);
+                }
+              };
+              collectTextNodes($getRoot());
+
+              let currentOffset = 0;
+              for (const textNode of allNodes) {
+                const len = textNode.getTextContent().length;
+                if (currentOffset + len >= savedOffset) {
+                  const offsetInNode = savedOffset - currentOffset;
+                  textNode.select(offsetInNode, offsetInNode);
+                  return;
+                }
+                currentOffset += len;
+              }
+              // If we couldn't find the exact position, place cursor at end
+              const lastChild = $getRoot().getLastChild();
+              if (lastChild) {
+                lastChild.selectEnd();
+              }
+            }
           },
           { tag: "external-update" }
         );
+
+        isFirstUpdate.current = false;
       }
-};
+    };
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);
   }, [editor]);
@@ -1359,6 +1416,79 @@ function SyncPlugin() {
       removeListener();
       clearTimeout(debounceTimer);
     };
+  }, [editor]);
+
+  return null;
+}
+
+// ── Trailing Paragraph Plugin ────────────────────────────────────
+// Ensures there's always a paragraph at the end of the document so the
+// cursor can be placed after block-level elements (tables, images, HRs, code blocks).
+
+function TrailingParagraphPlugin() {
+  const [editor] = useLexicalComposerContext();
+
+  useEffect(() => {
+    return editor.registerUpdateListener(({ tags }) => {
+      if (tags.has("external-update")) return;
+
+      editor.update(
+        () => {
+          const root = $getRoot();
+          const lastChild = root.getLastChild();
+          if (!lastChild || !$isParagraphNode(lastChild)) {
+            root.append($createParagraphNode());
+          }
+        },
+        { tag: "trailing-paragraph" }
+      );
+    });
+  }, [editor]);
+
+  return null;
+}
+
+// ── Click-to-End Plugin ─────────────────────────────────────────
+// Clicking in the empty space below the content places cursor at end of document.
+
+function ClickToEndPlugin() {
+  const [editor] = useLexicalComposerContext();
+
+  useEffect(() => {
+    const editorShell = editor.getRootElement()?.parentElement;
+    if (!editorShell) return;
+
+    // Walk up to find .editor-shell (the scrollable container)
+    let shell: HTMLElement | null = editorShell;
+    while (shell && !shell.classList.contains("editor-shell")) {
+      shell = shell.parentElement;
+    }
+    if (!shell) return;
+
+    const handleClick = (event: MouseEvent) => {
+      const root = editor.getRootElement();
+      if (!root) return;
+
+      // Only handle clicks directly on the shell (not on the contenteditable)
+      if (root.contains(event.target as Node)) return;
+
+      const rootRect = root.getBoundingClientRect();
+
+      // Click is below the content area
+      if (event.clientY > rootRect.bottom) {
+        editor.update(() => {
+          const rootNode = $getRoot();
+          const lastChild = rootNode.getLastChild();
+          if (lastChild) {
+            lastChild.selectEnd();
+          }
+        });
+        root.focus();
+      }
+    };
+
+    shell.addEventListener("click", handleClick);
+    return () => shell!.removeEventListener("click", handleClick);
   }, [editor]);
 
   return null;
@@ -1433,6 +1563,8 @@ function Editor() {
           <TableContextMenuPlugin />
           <SlashCommandPlugin />
           <SyncPlugin />
+          <TrailingParagraphPlugin />
+          <ClickToEndPlugin />
         </div>
       </div>
       <StatusBarPlugin isFocusMode={isFocusMode} />
