@@ -52,7 +52,6 @@ import {
   REDO_COMMAND,
   $getSelection,
   $isRangeSelection,
-  COMMAND_PRIORITY_LOW,
   COMMAND_PRIORITY_HIGH,
   KEY_ARROW_DOWN_COMMAND,
   KEY_ARROW_UP_COMMAND,
@@ -60,6 +59,9 @@ import {
   KEY_ESCAPE_COMMAND,
   TextNode,
   $isTextNode,
+  LexicalNode,
+  LexicalEditor,
+  ElementNode,
 } from "lexical";
 
 import {
@@ -90,7 +92,7 @@ const TABLE_ROW_DIVIDER_REG_EXP = /^(\| ?:?-+:? ?)+\|\s*$/;
 
 const TABLE_TRANSFORMER = {
   dependencies: [TableNode, TableRowNode, TableCellNode],
-  export: (node: any) => {
+  export: (node: LexicalNode) => {
     if (!$isTableNode(node)) {
       return null;
     }
@@ -131,10 +133,10 @@ const TABLE_TRANSFORMER = {
     startMatch,
   }: {
     lines: string[];
-    rootNode: any;
+    rootNode: ElementNode;
     startLineIndex: number;
     startMatch: RegExpMatchArray;
-    transformer: any;
+    transformer: unknown;
   }) => {
     // Collect all consecutive table lines
     const tableLines: string[] = [lines[startLineIndex]];
@@ -203,13 +205,13 @@ const TABLE_TRANSFORMER = {
 
 const IMAGE_TRANSFORMER = {
   dependencies: [ImageNode],
-  export: (node: any) => {
+  export: (node: LexicalNode) => {
     if (!$isImageNode(node)) return null;
     return `![${node.getAltText()}](${node.getSrc()})`;
   },
   importRegExp: /!(?:\[([^\]]*)\])(?:\(([^)]+)\))/,
   regExp: /!(?:\[([^\]]*)\])(?:\(([^)]+)\))$/,
-  replace: (textNode: any, match: RegExpMatchArray) => {
+  replace: (textNode: TextNode, match: RegExpMatchArray) => {
     const [, altText, src] = match;
     const imageNode = $createImageNode(src, altText || "");
     textNode.replace(imageNode);
@@ -614,7 +616,6 @@ function KeyboardShortcutsPlugin() {
 function TableContextMenuPlugin() {
   const [editor] = useLexicalComposerContext();
   const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
-  const [isInTable, setIsInTable] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -624,12 +625,11 @@ function TableContextMenuPlugin() {
         if (!$isRangeSelection(selection)) return;
         const node = selection.anchor.getNode();
         // Walk up to find table cell
-        let current: any = node;
+        let current: LexicalNode | null = node;
         while (current) {
           if ($isTableCellNode(current)) {
             event.preventDefault();
             setMenuPos({ x: event.clientX, y: event.clientY });
-            setIsInTable(true);
             return;
           }
           current = current.getParent();
@@ -640,7 +640,6 @@ function TableContextMenuPlugin() {
     const handleClick = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setMenuPos(null);
-        setIsInTable(false);
       }
     };
 
@@ -660,7 +659,6 @@ function TableContextMenuPlugin() {
 
   const closeMenu = () => {
     setMenuPos(null);
-    setIsInTable(false);
   };
 
   const insertRowAbove = () => {
@@ -710,7 +708,7 @@ function TableContextMenuPlugin() {
       const selection = $getSelection();
       if ($isRangeSelection(selection)) {
         const node = selection.anchor.getNode();
-        let current: any = node;
+        let current: LexicalNode | null = node;
         while (current) {
           if ($isTableNode(current)) {
             current.remove();
@@ -723,7 +721,7 @@ function TableContextMenuPlugin() {
     closeMenu();
   };
 
-  if (!menuPos || !isInTable) return null;
+  if (!menuPos) return null;
 
   return (
     <div
@@ -757,7 +755,7 @@ interface SlashCommandItem {
   description: string;
   icon: string;
   keywords: string[];
-  action: (editor: any) => void;
+  action: (editor: LexicalEditor) => void;
 }
 
 const SLASH_COMMANDS: SlashCommandItem[] = [
@@ -918,7 +916,6 @@ function SlashCommandPlugin() {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [menuPosition, setMenuPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const menuRef = useRef<HTMLDivElement>(null);
-  const slashNodeKeyRef = useRef<string | null>(null);
 
   const filteredItems = SLASH_COMMANDS.filter((item) => {
     if (!query) return true;
@@ -977,13 +974,6 @@ function SlashCommandPlugin() {
     },
     [editor, removeSlashText]
   );
-
-  // Detect "/" typed at start of line or after whitespace
-  useEffect(() => {
-    return editor.registerTextContentListener((textContent) => {
-      // We handle detection in the update listener below
-    });
-  }, [editor]);
 
   useEffect(() => {
     return editor.registerUpdateListener(({ editorState, tags }) => {
