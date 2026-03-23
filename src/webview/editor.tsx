@@ -618,6 +618,115 @@ function KeyboardShortcutsPlugin() {
   return null;
 }
 
+// ── Status Bar Plugin ────────────────────────────────────────────
+
+interface StatusBarStats {
+  words: number;
+  characters: number;
+  readingTime: string;
+  paragraphWords: number | null;
+}
+
+function getTextContent(node: LexicalNode): string {
+  if ($isTextNode(node)) {
+    return node.getTextContent();
+  }
+  if ("getChildren" in node && typeof (node as ElementNode).getChildren === "function") {
+    return (node as ElementNode)
+      .getChildren()
+      .map(getTextContent)
+      .join(" ");
+  }
+  return "";
+}
+
+function countWords(text: string): number {
+  const trimmed = text.trim();
+  if (!trimmed) return 0;
+  return trimmed.split(/\s+/).length;
+}
+
+function formatReadingTime(words: number): string {
+  const minutes = words / 200;
+  if (minutes < 1) return "< 1 min read";
+  const rounded = Math.ceil(minutes);
+  return `${rounded} min read`;
+}
+
+function StatusBarPlugin({
+  isFocusMode,
+}: {
+  isFocusMode: boolean;
+}) {
+  const [editor] = useLexicalComposerContext();
+  const [stats, setStats] = useState<StatusBarStats>({
+    words: 0,
+    characters: 0,
+    readingTime: "< 1 min read",
+    paragraphWords: null,
+  });
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const computeStats = () => {
+      editor.getEditorState().read(() => {
+        const root = $getRoot();
+        const fullText = getTextContent(root);
+        const words = countWords(fullText);
+        const characters = fullText.replace(/\s/g, "").length;
+
+        let paragraphWords: number | null = null;
+        if (isFocusMode) {
+          const selection = $getSelection();
+          if ($isRangeSelection(selection)) {
+            const anchorNode = selection.anchor.getNode();
+            if (anchorNode.getKey() !== "root") {
+              const topLevel = anchorNode.getTopLevelElementOrThrow();
+              const blockText = getTextContent(topLevel);
+              paragraphWords = countWords(blockText);
+            }
+          }
+        }
+
+        setStats({
+          words,
+          characters,
+          readingTime: formatReadingTime(words),
+          paragraphWords,
+        });
+      });
+    };
+
+    // Initial compute
+    computeStats();
+
+    const removeListener = editor.registerUpdateListener(() => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(computeStats, 500);
+    });
+
+    return () => {
+      removeListener();
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [editor, isFocusMode]);
+
+  return (
+    <div className="status-bar">
+      <div className="status-bar-items">
+        {isFocusMode && stats.paragraphWords !== null && (
+          <span className="status-bar-item status-bar-paragraph">
+            ¶ {stats.paragraphWords} {stats.paragraphWords === 1 ? "word" : "words"}
+          </span>
+        )}
+        <span className="status-bar-item">{stats.words.toLocaleString()} words</span>
+        <span className="status-bar-item">{stats.characters.toLocaleString()} chars</span>
+        <span className="status-bar-item">{stats.readingTime}</span>
+      </div>
+    </div>
+  );
+}
+
 // ── Focus Mode Plugin ────────────────────────────────────────────
 
 function FocusModePlugin({ isActive, onToggle }: { isActive: boolean; onToggle: () => void }) {
@@ -1326,6 +1435,7 @@ function Editor() {
           <SyncPlugin />
         </div>
       </div>
+      <StatusBarPlugin isFocusMode={isFocusMode} />
     </LexicalComposer>
   );
 }
