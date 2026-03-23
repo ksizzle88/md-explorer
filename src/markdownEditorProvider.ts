@@ -136,7 +136,8 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
       align-items: center;
       min-height: 36px;
     }
-    .toolbar button {
+    .toolbar button,
+    .toolbar .toolbar-btn {
       background: transparent;
       border: 1px solid transparent;
       color: var(--vscode-foreground, var(--vscode-editor-foreground));
@@ -148,13 +149,93 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
       min-width: 28px;
       line-height: 1.4;
     }
-    .toolbar button:hover {
+    .toolbar button:hover,
+    .toolbar .toolbar-btn:hover {
       background: var(--vscode-toolbar-hoverBackground, rgba(90, 93, 94, 0.31));
     }
-    .toolbar button.active {
+    .toolbar button.active,
+    .toolbar .toolbar-btn.active {
       background: var(--vscode-button-background, #0078d4);
       color: var(--vscode-button-foreground, #fff);
       border-color: transparent;
+    }
+    .toolbar button:disabled,
+    .toolbar .toolbar-btn:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+    .toolbar .toolbar-divider {
+      width: 1px;
+      align-self: stretch;
+      background: var(--vscode-panel-border, #444);
+      margin: 4px 6px;
+    }
+    /* Toolbar dropdown */
+    .toolbar-dropdown-wrap {
+      position: relative;
+      display: inline-flex;
+    }
+    .toolbar-dropdown-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--vscode-foreground, var(--vscode-editor-foreground));
+      padding: 3px 7px;
+      cursor: pointer;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: inherit;
+      line-height: 1.4;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+    }
+    .toolbar-dropdown-btn:hover {
+      background: var(--vscode-toolbar-hoverBackground, rgba(90, 93, 94, 0.31));
+    }
+    .toolbar-dropdown-btn.active {
+      background: var(--vscode-toolbar-hoverBackground, rgba(90, 93, 94, 0.31));
+    }
+    .dropdown-caret {
+      font-size: 10px;
+      opacity: 0.7;
+    }
+    .toolbar-block-format {
+      min-width: 90px;
+    }
+    .toolbar-dropdown-menu {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      z-index: 100;
+      background: var(--vscode-menu-background, #252526);
+      border: 1px solid var(--vscode-menu-border, #454545);
+      border-radius: 4px;
+      padding: 4px 0;
+      min-width: 160px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .toolbar-dropdown-item {
+      display: block;
+      width: 100%;
+      background: transparent;
+      border: none;
+      color: var(--vscode-menu-foreground, #ccc);
+      padding: 6px 16px;
+      text-align: left;
+      font-size: 13px;
+      font-family: inherit;
+      cursor: pointer;
+      line-height: 1.4;
+    }
+    .toolbar-dropdown-item:hover {
+      background: var(--vscode-menu-selectionBackground, #094771);
+      color: var(--vscode-menu-selectionForeground, #fff);
+    }
+    .toolbar-dropdown-item.active {
+      font-weight: 600;
     }
     .toolbar .separator {
       width: 1px;
@@ -338,6 +419,26 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
     [contenteditable] th:focus-within {
       outline: 2px solid var(--vscode-focusBorder, #007acc);
       outline-offset: -2px;
+    }
+    /* Lexical table cell selection highlight */
+    [contenteditable] .editor-table-cell-selected {
+      background-color: color-mix(in srgb, var(--vscode-editor-selectionBackground, #264f78) 50%, transparent) !important;
+      caret-color: transparent;
+    }
+    /* Lexical table in multi-cell selection mode */
+    [contenteditable] table.editor-table-selection {
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    [contenteditable] table.disable-selection {
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    /* Ensure table cells are editable and clickable */
+    [contenteditable] table td,
+    [contenteditable] table th {
+      cursor: text;
+      min-width: 40px;
     }
     /* Table context menu */
     .table-context-menu {
@@ -609,6 +710,82 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
     }
     .source-textarea:focus {
       border-color: var(--vscode-focusBorder, #007acc);
+    }
+    /* Floating text format toolbar */
+    .floating-text-format-popup {
+      position: fixed;
+      z-index: 100;
+      display: flex;
+      gap: 2px;
+      padding: 4px 6px;
+      background: var(--vscode-editorWidget-background, #252526);
+      border: 1px solid var(--vscode-editorWidget-border, #454545);
+      border-radius: 6px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+    .floating-text-format-popup .popup-item {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--vscode-foreground, var(--vscode-editor-foreground));
+      padding: 3px 8px;
+      cursor: pointer;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: inherit;
+      min-width: 28px;
+      line-height: 1.4;
+    }
+    .floating-text-format-popup .popup-item:hover {
+      background: var(--vscode-toolbar-hoverBackground, rgba(90, 93, 94, 0.31));
+    }
+    .floating-text-format-popup .popup-item.active {
+      background: var(--vscode-button-background, #0078d4);
+      color: var(--vscode-button-foreground, #fff);
+    }
+    /* Checklist styles */
+    .editor-listitem-checked,
+    .editor-listitem-unchecked {
+      list-style-type: none;
+      position: relative;
+      padding-left: 8px;
+      margin-left: -20px;
+    }
+    .editor-listitem-checked::before,
+    .editor-listitem-unchecked::before {
+      content: '';
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 1px solid var(--vscode-checkbox-border, #6b6b6b);
+      border-radius: 3px;
+      margin-right: 8px;
+      vertical-align: middle;
+      position: relative;
+      top: -1px;
+      cursor: pointer;
+    }
+    .editor-listitem-checked::before {
+      background: var(--vscode-checkbox-background, #0078d4);
+      border-color: var(--vscode-checkbox-border, #0078d4);
+    }
+    .editor-listitem-checked::after {
+      content: '';
+      display: inline-block;
+      width: 5px;
+      height: 9px;
+      border: solid var(--vscode-checkbox-foreground, #fff);
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+      position: absolute;
+      left: 14px;
+      top: 5px;
+    }
+    .editor-listitem-checked {
+      text-decoration: line-through;
+      opacity: 0.7;
+    }
+    .editor-nested-listitem {
+      list-style-type: none;
     }
   </style>
 </head>
