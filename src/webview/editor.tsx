@@ -1,50 +1,38 @@
 /**
- * MD Explorer - Lexical Markdown Editor for VS Code
+ * MD Explorer - Full Lexical Playground for VS Code
  *
- * Architecture ported from Lexical Playground (facebook/lexical).
- * Plugins are modular files in ./plugins/, keeping this file as a thin orchestrator.
- *
- * What we kept from our code:
- *   - VS Code integration (vscode API, SyncPlugin, SourceModePlugin)
- *   - Custom markdown transformers (table with pipe escaping, image with balanced parens)
- *   - VS Code CSS theming
- *   - ImageNode
- *
- * What we ported from the playground:
- *   - ToolbarPlugin with dropdown menus
- *   - FloatingTextFormatToolbarPlugin
- *   - ComponentPickerPlugin (enhanced slash commands)
- *   - CodeHighlightPlugin
- *   - DraggableBlockPlugin
- *   - MarkdownShortcutsPlugin (inline markdown shortcuts)
- *   - Modular plugin architecture
+ * Wraps the Lexical Playground App component and adds:
+ * - VS Code message passing (SyncPlugin)
+ * - Markdown import/export (load .md → Lexical state, Lexical state → .md)
+ * - Our custom markdown transformers (table pipe escaping, image balanced parens)
+ * - DiffView and SourceMode from our original code
  */
-import React, { useEffect, useCallback, useState, useRef } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { createRoot } from "react-dom/client";
 
-import { LexicalComposer } from "@lexical/react/LexicalComposer";
-import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
-import { ContentEditable } from "@lexical/react/LexicalContentEditable";
-import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
-import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
-import { ListPlugin } from "@lexical/react/LexicalListPlugin";
-import { LinkPlugin } from "@lexical/react/LexicalLinkPlugin";
-import { CheckListPlugin } from "@lexical/react/LexicalCheckListPlugin";
-import { TabIndentationPlugin } from "@lexical/react/LexicalTabIndentationPlugin";
-import { TablePlugin } from "@lexical/react/LexicalTablePlugin";
-import { MarkdownShortcutPlugin } from "@lexical/react/LexicalMarkdownShortcutPlugin";
-import { HorizontalRulePlugin } from "@lexical/react/LexicalHorizontalRulePlugin";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
-
-import { HeadingNode, QuoteNode } from "@lexical/rich-text";
-import { ListNode, ListItemNode } from "@lexical/list";
-import { LinkNode, AutoLinkNode } from "@lexical/link";
-import { CodeNode, CodeHighlightNode } from "@lexical/code";
-import { HorizontalRuleNode } from "@lexical/react/LexicalHorizontalRuleNode";
 import {
-  TableNode,
-  TableCellNode,
-  TableRowNode,
+  $convertFromMarkdownString,
+  $convertToMarkdownString,
+} from "@lexical/markdown";
+import {
+  $getRoot,
+  $getSelection,
+  $isRangeSelection,
+  $isTextNode,
+  $createParagraphNode,
+  $isParagraphNode,
+  TextNode,
+  LexicalNode,
+  ElementNode,
+} from "lexical";
+
+// Import the playground app and transformers
+import PlaygroundApp from "./playground/App";
+import { PLAYGROUND_TRANSFORMERS } from "./playground/plugins/MarkdownTransformers";
+
+// Our custom transformers that improve on the playground's defaults
+import {
   $createTableCellNode,
   $createTableRowNode,
   $createTableNode,
@@ -52,40 +40,18 @@ import {
   $isTableRowNode,
   $isTableCellNode,
   TableCellHeaderStates,
+  TableNode,
+  TableRowNode,
+  TableCellNode,
 } from "@lexical/table";
-import {
-  $convertFromMarkdownString,
-  $convertToMarkdownString,
-  TRANSFORMERS,
-} from "@lexical/markdown";
-
-import {
-  $getRoot,
-  $createParagraphNode,
-  $createTextNode,
-  $isParagraphNode,
-  $getSelection,
-  $isRangeSelection,
-  $isTextNode,
-  TextNode,
-  LexicalNode,
-  ElementNode,
-} from "lexical";
-
 import { ImageNode, $isImageNode, $createImageNode } from "./ImageNode";
-import { escapeTableCell, unescapeTableCell, splitTableRow, parseTableDataRows } from "./tableUtils";
+import {
+  escapeTableCell,
+  unescapeTableCell,
+  splitTableRow,
+  parseTableDataRows,
+} from "./tableUtils";
 import { escapeImageAltText, unescapeImageAltText } from "./imageUtils";
-
-// Plugins (ported from Lexical Playground + our originals)
-import ToolbarPlugin from "./plugins/ToolbarPlugin";
-import FloatingTextFormatToolbarPlugin from "./plugins/FloatingTextFormatToolbarPlugin";
-import ComponentPickerPlugin from "./plugins/ComponentPickerPlugin";
-import CodeHighlightPlugin from "./plugins/CodeHighlightPlugin";
-import CodeBlockBehaviorPlugin from "./plugins/CodeBlockBehaviorPlugin";
-import KeyboardShortcutsPlugin from "./plugins/KeyboardShortcutsPlugin";
-import TableContextMenuPlugin from "./plugins/TableContextMenuPlugin";
-import DraggableBlockPlugin from "./plugins/DraggableBlockPlugin";
-import DiffViewPlugin from "./plugins/DiffViewPlugin";
 
 // ── VS Code API ─────────────────────────────────────────────────
 
@@ -97,7 +63,9 @@ declare function acquireVsCodeApi(): {
 const vscode = acquireVsCodeApi();
 (window as any).vscodeApi = vscode;
 
-// ── Custom Markdown Transformers ────────────────────────────────
+// ── Enhanced Markdown Transformers ──────────────────────────────
+// Our transformers override the playground's basic table/image ones
+// with better pipe escaping and balanced-paren image URLs.
 
 const TABLE_ROW_REG_EXP = /^(?:\|)(.+)(?:\|)\s*$/;
 const TABLE_ROW_DIVIDER_REG_EXP = /^(\| ?:?-+:? ?)+\|\s*$/;
@@ -150,7 +118,10 @@ const TABLE_TRANSFORMER = {
 
     for (let i = startLineIndex + 1; i < lines.length; i++) {
       const line = lines[i];
-      if (TABLE_ROW_REG_EXP.test(line) || TABLE_ROW_DIVIDER_REG_EXP.test(line)) {
+      if (
+        TABLE_ROW_REG_EXP.test(line) ||
+        TABLE_ROW_DIVIDER_REG_EXP.test(line)
+      ) {
         tableLines.push(line);
         endLineIndex = i;
       } else {
@@ -160,7 +131,11 @@ const TABLE_TRANSFORMER = {
 
     if (tableLines.length < 2) return null;
 
-    const dataRows = parseTableDataRows(tableLines, TABLE_ROW_REG_EXP, TABLE_ROW_DIVIDER_REG_EXP);
+    const dataRows = parseTableDataRows(
+      tableLines,
+      TABLE_ROW_REG_EXP,
+      TABLE_ROW_DIVIDER_REG_EXP,
+    );
 
     if (dataRows.length === 0) return null;
 
@@ -198,20 +173,37 @@ const IMAGE_TRANSFORMER = {
     if (!$isImageNode(node)) return null;
     return `![${escapeImageAltText(node.getAltText())}](${node.getSrc()})`;
   },
-  importRegExp: /!(?:\[((?:[^\]\\]|\\.)*)\])(?:\(((?:[^()]+|\([^()]*\))+)\))/,
-  regExp: /!(?:\[((?:[^\]\\]|\\.)*)\])(?:\(((?:[^()]+|\([^()]*\))+)\))$/,
+  importRegExp:
+    /!(?:\[((?:[^\]\\]|\\.)*)\])(?:\(((?:[^()]+|\([^()]*\))+)\))/,
+  regExp:
+    /!(?:\[((?:[^\]\\]|\\.)*)\])(?:\(((?:[^()]+|\([^()]*\))+)\))$/,
   replace: (textNode: TextNode, match: RegExpMatchArray) => {
     const [, altText, src] = match;
-    const imageNode = $createImageNode(src, unescapeImageAltText(altText || ""));
+    const imageNode = $createImageNode(
+      src,
+      unescapeImageAltText(altText || ""),
+    );
     textNode.replace(imageNode);
   },
   trigger: ")",
   type: "text-match" as const,
 };
 
-const ALL_TRANSFORMERS = [TABLE_TRANSFORMER, IMAGE_TRANSFORMER, ...TRANSFORMERS];
+// Combine our custom transformers with the playground's,
+// filtering out the playground's basic TABLE/IMAGE transformers
+// since ours handle escaping better.
+const COMBINED_TRANSFORMERS = [
+  TABLE_TRANSFORMER,
+  IMAGE_TRANSFORMER,
+  ...PLAYGROUND_TRANSFORMERS.filter(
+    (t: any) =>
+      // Remove playground's basic table and image transformers
+      !(t.type === "element" && t.dependencies?.includes(TableNode)) &&
+      !(t.type === "text-match" && t.dependencies?.includes(ImageNode as any)),
+  ),
+];
 
-// ── Sync Plugin: VS Code <-> Lexical ────────────────────────────
+// ── SyncPlugin: VS Code <-> Lexical ─────────────────────────────
 
 function SyncPlugin() {
   const [editor] = useLexicalComposerContext();
@@ -245,38 +237,40 @@ function SyncPlugin() {
           () => {
             const root = $getRoot();
             root.clear();
-            $convertFromMarkdownString(msg.text, ALL_TRANSFORMERS);
-
-            if (restoreCursor && savedOffset > 0) {
-              const allNodes: TextNode[] = [];
-              const collectTextNodes = (node: LexicalNode) => {
-                if ($isTextNode(node)) {
-                  allNodes.push(node);
-                } else if (
-                  "getChildren" in node &&
-                  typeof (node as ElementNode).getChildren === "function"
-                ) {
-                  (node as ElementNode).getChildren().forEach(collectTextNodes);
-                }
-              };
-              collectTextNodes($getRoot());
-
-              let currentOffset = 0;
-              for (const textNode of allNodes) {
-                const len = textNode.getTextContent().length;
-                if (currentOffset + len >= savedOffset) {
-                  const offsetInNode = savedOffset - currentOffset;
-                  textNode.select(offsetInNode, offsetInNode);
-                  return;
-                }
-                currentOffset += len;
-              }
-              const lastChild = $getRoot().getLastChild();
-              if (lastChild) lastChild.selectEnd();
-            }
+            $convertFromMarkdownString(msg.text, COMBINED_TRANSFORMERS);
           },
-          { tag: "external-update" }
+          { tag: "external-update" },
         );
+
+        if (restoreCursor && savedOffset > 0) {
+          editor.update(() => {
+            const allNodes: TextNode[] = [];
+            const collectTextNodes = (node: LexicalNode) => {
+              if ($isTextNode(node)) {
+                allNodes.push(node);
+              } else if (
+                "getChildren" in node &&
+                typeof (node as ElementNode).getChildren === "function"
+              ) {
+                (node as ElementNode).getChildren().forEach(collectTextNodes);
+              }
+            };
+            collectTextNodes($getRoot());
+
+            let currentOffset = 0;
+            for (const textNode of allNodes) {
+              const len = textNode.getTextContent().length;
+              if (currentOffset + len >= savedOffset) {
+                const offsetInNode = savedOffset - currentOffset;
+                textNode.select(offsetInNode, offsetInNode);
+                return;
+              }
+              currentOffset += len;
+            }
+            const lastChild = $getRoot().getLastChild();
+            if (lastChild) lastChild.selectEnd();
+          });
+        }
 
         isFirstUpdate.current = false;
       }
@@ -293,11 +287,11 @@ function SyncPlugin() {
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(() => {
           editorState.read(() => {
-            const markdown = $convertToMarkdownString(ALL_TRANSFORMERS);
+            const markdown = $convertToMarkdownString(COMBINED_TRANSFORMERS);
             vscode.postMessage({ type: "edit", text: markdown });
           });
         }, 300);
-      }
+      },
     );
     return () => {
       removeListener();
@@ -324,7 +318,7 @@ function TrailingParagraphPlugin() {
             root.append($createParagraphNode());
           }
         },
-        { tag: "trailing-paragraph" }
+        { tag: "trailing-paragraph" },
       );
     });
   }, [editor]);
@@ -369,378 +363,27 @@ function ClickToEndPlugin() {
   return null;
 }
 
-// ── Focus Mode Plugin ───────────────────────────────────────────
+// ── VS Code Integration Plugins ─────────────────────────────────
+// These plugins are injected into the playground's editor context
+// via a wrapper that renders them inside the LexicalComposer.
 
-function FocusModePlugin({
-  isActive,
-  onToggle,
-}: {
-  isActive: boolean;
-  onToggle: () => void;
-}) {
-  const [editor] = useLexicalComposerContext();
-
-  useEffect(() => {
-    const root = editor.getRootElement();
-    if (!root) return;
-    const handleKeyDown = (event: KeyboardEvent) => {
-      const isCtrl = event.ctrlKey || event.metaKey;
-      if (isCtrl && event.shiftKey && event.key === "F") {
-        event.preventDefault();
-        onToggle();
-      }
-    };
-    root.addEventListener("keydown", handleKeyDown);
-    return () => root.removeEventListener("keydown", handleKeyDown);
-  }, [editor, onToggle]);
-
-  useEffect(() => {
-    const root = editor.getRootElement();
-    if (!root) return;
-
-    if (isActive) {
-      root.classList.add("focus-mode");
-    } else {
-      root.classList.remove("focus-mode");
-      root.querySelectorAll(".focus-active").forEach((el) => {
-        el.classList.remove("focus-active");
-      });
-      return;
-    }
-
-    const removeListener = editor.registerUpdateListener(({ editorState }) => {
-      editorState.read(() => {
-        const selection = $getSelection();
-        root.querySelectorAll(".focus-active").forEach((el) => {
-          el.classList.remove("focus-active");
-        });
-        if (!$isRangeSelection(selection)) return;
-        const anchorNode = selection.anchor.getNode();
-        const topLevelElement =
-          anchorNode.getKey() === "root"
-            ? null
-            : anchorNode.getTopLevelElementOrThrow();
-        if (topLevelElement) {
-          const dom = editor.getElementByKey(topLevelElement.getKey());
-          if (dom) dom.classList.add("focus-active");
-        }
-      });
-    });
-
-    return () => {
-      removeListener();
-      root.querySelectorAll(".focus-active").forEach((el) => {
-        el.classList.remove("focus-active");
-      });
-    };
-  }, [editor, isActive]);
-
-  return null;
-}
-
-// ── Source Mode Plugin ──────────────────────────────────────────
-
-function SourceModePlugin({
-  isSourceMode,
-  sourceText,
-  onSourceTextChange,
-}: {
-  isSourceMode: boolean;
-  sourceText: string;
-  onSourceTextChange: (text: string) => void;
-}) {
-  const [editor] = useLexicalComposerContext();
-  const prevSourceMode = useRef(isSourceMode);
-
-  useEffect(() => {
-    const wasSource = prevSourceMode.current;
-    prevSourceMode.current = isSourceMode;
-
-    if (isSourceMode && !wasSource) {
-      editor.getEditorState().read(() => {
-        const markdown = $convertToMarkdownString(ALL_TRANSFORMERS);
-        onSourceTextChange(markdown);
-      });
-    } else if (!isSourceMode && wasSource) {
-      editor.update(
-        () => {
-          const root = $getRoot();
-          root.clear();
-          $convertFromMarkdownString(sourceText, ALL_TRANSFORMERS);
-        },
-        { tag: "external-update" }
-      );
-      vscode.postMessage({ type: "edit", text: sourceText });
-    }
-  }, [isSourceMode]);
-
-  useEffect(() => {
-    if (!isSourceMode) return;
-    const timer = setTimeout(() => {
-      vscode.postMessage({ type: "edit", text: sourceText });
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [sourceText, isSourceMode]);
-
-  return null;
-}
-
-// ── Editor Theme ────────────────────────────────────────────────
-
-const editorTheme = {
-  text: {
-    bold: "editor-bold",
-    italic: "editor-italic",
-    strikethrough: "editor-strikethrough",
-    code: "editor-code",
-    underline: "editor-underline",
-  },
-  heading: {
-    h1: "editor-h1",
-    h2: "editor-h2",
-    h3: "editor-h3",
-    h4: "editor-h4",
-    h5: "editor-h5",
-    h6: "editor-h6",
-  },
-  code: "editor-code-block",
-  codeHighlight: {
-    atrule: "editor-tokenAttr",
-    attr: "editor-tokenAttr",
-    boolean: "editor-tokenProperty",
-    builtin: "editor-tokenSelector",
-    cdata: "editor-tokenComment",
-    char: "editor-tokenSelector",
-    class: "editor-tokenFunction",
-    "class-name": "editor-tokenFunction",
-    comment: "editor-tokenComment",
-    constant: "editor-tokenProperty",
-    deleted: "editor-tokenProperty",
-    doctype: "editor-tokenComment",
-    entity: "editor-tokenOperator",
-    function: "editor-tokenFunction",
-    important: "editor-tokenVariable",
-    inserted: "editor-tokenSelector",
-    keyword: "editor-tokenAttr",
-    namespace: "editor-tokenVariable",
-    number: "editor-tokenProperty",
-    operator: "editor-tokenOperator",
-    prolog: "editor-tokenComment",
-    property: "editor-tokenProperty",
-    punctuation: "editor-tokenPunctuation",
-    regex: "editor-tokenVariable",
-    selector: "editor-tokenSelector",
-    string: "editor-tokenSelector",
-    symbol: "editor-tokenProperty",
-    tag: "editor-tokenProperty",
-    url: "editor-tokenOperator",
-    variable: "editor-tokenVariable",
-  },
-  list: {
-    listitem: "editor-listitem",
-    listitemChecked: "editor-listitem-checked",
-    listitemUnchecked: "editor-listitem-unchecked",
-    nested: {
-      listitem: "editor-nested-listitem",
-    },
-  },
-  table: "editor-table",
-  tableCell: "editor-table-cell",
-  tableCellHeader: "editor-table-cell-header",
-  tableCellSelected: "editor-table-cell-selected",
-  tableRow: "editor-table-row",
-  tableSelection: "editor-table-selection",
-};
-
-// ── Editor Config ───────────────────────────────────────────────
-
-const editorConfig = {
-  namespace: "MarkdownEditor",
-  theme: editorTheme,
-  nodes: [
-    HeadingNode,
-    QuoteNode,
-    ListNode,
-    ListItemNode,
-    LinkNode,
-    AutoLinkNode,
-    CodeNode,
-    CodeHighlightNode,
-    HorizontalRuleNode,
-    TableNode,
-    TableCellNode,
-    TableRowNode,
-    ImageNode,
-  ],
-  onError: (error: Error) => {
-    console.error("Lexical error:", error);
-  },
-};
-
-// ── Main Editor Component ───────────────────────────────────────
-
-function Editor() {
-  const [isFocusMode, setIsFocusMode] = useState(false);
-  const [isSourceMode, setIsSourceMode] = useState(false);
-  const [isDiffMode, setIsDiffMode] = useState(false);
-  const [sourceText, setSourceText] = useState("");
-  const [diffCurrentText, setDiffCurrentText] = useState("");
-  const [floatingAnchorElem, setFloatingAnchorElem] =
-    useState<HTMLDivElement | null>(null);
-
-  const toggleFocusMode = useCallback(
-    () => setIsFocusMode((prev) => !prev),
-    []
-  );
-  const toggleSourceMode = useCallback(
-    () => setIsSourceMode((prev) => !prev),
-    []
-  );
-  const toggleDiffMode = useCallback(
-    () => setIsDiffMode((prev) => !prev),
-    []
-  );
-  const closeDiffMode = useCallback(
-    () => setIsDiffMode(false),
-    []
-  );
-
-  const onRef = useCallback((elem: HTMLDivElement | null) => {
-    if (elem !== null) {
-      setFloatingAnchorElem(elem);
-    }
-  }, []);
-
+function VSCodePlugins() {
   return (
-    <LexicalComposer initialConfig={editorConfig}>
-      <ToolbarPlugin
-        isFocusMode={isFocusMode}
-        onToggleFocusMode={toggleFocusMode}
-        isSourceMode={isSourceMode}
-        onToggleSourceMode={toggleSourceMode}
-        isDiffMode={isDiffMode}
-        onToggleDiffMode={toggleDiffMode}
-      />
-      <SourceModePlugin
-        isSourceMode={isSourceMode}
-        sourceText={sourceText}
-        onSourceTextChange={setSourceText}
-      />
-      {isSourceMode ? (
-        <div className="editor-shell">
-          <div className="editor-content-area">
-            <textarea
-              className="source-textarea"
-              value={sourceText}
-              onChange={(e) => setSourceText(e.target.value)}
-              spellCheck={false}
-            />
-          </div>
-        </div>
-      ) : (
-        <div className="editor-shell">
-          <div className="editor-content-area" ref={onRef}>
-            <RichTextPlugin
-              contentEditable={<ContentEditable />}
-              ErrorBoundary={LexicalErrorBoundary}
-            />
-            <HistoryPlugin />
-            <ListPlugin />
-            <CheckListPlugin />
-            <LinkPlugin />
-            <HorizontalRulePlugin />
-            <TablePlugin hasTabHandler={true} />
-            <TabIndentationPlugin />
-            <MarkdownShortcutPlugin transformers={TRANSFORMERS} />
-            <KeyboardShortcutsPlugin />
-            <CodeHighlightPlugin />
-            <CodeBlockBehaviorPlugin />
-            <FocusModePlugin
-              isActive={isFocusMode}
-              onToggle={toggleFocusMode}
-            />
-            <TableContextMenuPlugin />
-            <ComponentPickerPlugin />
-            <SyncPlugin />
-            <TrailingParagraphPlugin />
-            <ClickToEndPlugin />
-            <DraggableBlockPlugin />
-            {floatingAnchorElem && (
-              <FloatingTextFormatToolbarPlugin
-                anchorElem={floatingAnchorElem}
-              />
-            )}
-          </div>
-        </div>
-      )}
-      <DiffCapturePlugin isDiffMode={isDiffMode} onCapture={setDiffCurrentText} />
-      <DiffKeyboardPlugin onToggle={toggleDiffMode} />
-      {isDiffMode && (
-        <DiffViewPlugin
-          isActive={isDiffMode}
-          currentText={diffCurrentText}
-          onClose={closeDiffMode}
-        />
-      )}
-    </LexicalComposer>
+    <>
+      <SyncPlugin />
+      <TrailingParagraphPlugin />
+      <ClickToEndPlugin />
+    </>
   );
 }
 
-// ── Diff Capture Plugin ─────────────────────────────────────
-// Captures current markdown text when diff mode is toggled on
+// Export for use in the playground's Editor component
+(window as any).__vsCodePlugins = VSCodePlugins;
 
-function DiffCapturePlugin({
-  isDiffMode,
-  onCapture,
-}: {
-  isDiffMode: boolean;
-  onCapture: (text: string) => void;
-}) {
-  const [editor] = useLexicalComposerContext();
-  const prevDiffMode = useRef(false);
+// ── Render ──────────────────────────────────────────────────────
 
-  useEffect(() => {
-    if (isDiffMode && !prevDiffMode.current) {
-      editor.getEditorState().read(() => {
-        const markdown = $convertToMarkdownString(ALL_TRANSFORMERS);
-        onCapture(markdown);
-      });
-    }
-    prevDiffMode.current = isDiffMode;
-  }, [isDiffMode, editor, onCapture]);
-
-  return null;
-}
-
-// ── Diff Keyboard Plugin ────────────────────────────────────
-// Handles Ctrl+D shortcut to toggle diff view
-
-function DiffKeyboardPlugin({ onToggle }: { onToggle: () => void }) {
-  const [editor] = useLexicalComposerContext();
-
-  useEffect(() => {
-    const root = editor.getRootElement();
-    if (!root) return;
-    const handleKeyDown = (event: KeyboardEvent) => {
-      const isCtrl = event.ctrlKey || event.metaKey;
-      if (isCtrl && event.key === "d") {
-        event.preventDefault();
-        onToggle();
-      }
-    };
-    root.addEventListener("keydown", handleKeyDown);
-    return () => root.removeEventListener("keydown", handleKeyDown);
-  }, [editor, onToggle]);
-
-  return null;
-}
-
-// ── Mount ───────────────────────────────────────────────────────
-
-const container = document.getElementById("app");
-if (container) {
-  const root = createRoot(container);
-  root.render(<Editor />);
-}
-
+// Signal ready to the extension host
 vscode.postMessage({ type: "ready" });
+
+const root = createRoot(document.getElementById("app")!);
+root.render(<PlaygroundApp />);
