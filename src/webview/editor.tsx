@@ -225,7 +225,7 @@ const ALL_TRANSFORMERS = [TABLE_TRANSFORMER, IMAGE_TRANSFORMER, ...TRANSFORMERS]
 
 // ── Toolbar ──────────────────────────────────────────────────────
 
-function ToolbarPlugin() {
+function ToolbarPlugin({ isFocusMode, onToggleFocusMode }: { isFocusMode: boolean; onToggleFocusMode: () => void }) {
   const [editor] = useLexicalComposerContext();
   const [isBold, setIsBold] = useState(false);
   const [isItalic, setIsItalic] = useState(false);
@@ -481,6 +481,14 @@ function ToolbarPlugin() {
       >
         ―
       </button>
+      <div className="separator" />
+      <button
+        className={isFocusMode ? "active" : ""}
+        onClick={onToggleFocusMode}
+        title="Focus Mode (Ctrl+Shift+F)"
+      >
+        Focus
+      </button>
     </div>
   );
 }
@@ -607,6 +615,82 @@ function KeyboardShortcutsPlugin() {
       return () => root.removeEventListener("keydown", handleKeyDown);
     }
   }, [editor]);
+
+  return null;
+}
+
+// ── Focus Mode Plugin ────────────────────────────────────────────
+
+function FocusModePlugin({ isActive, onToggle }: { isActive: boolean; onToggle: () => void }) {
+  const [editor] = useLexicalComposerContext();
+
+  // Keyboard shortcut: Ctrl+Shift+F
+  useEffect(() => {
+    const root = editor.getRootElement();
+    if (!root) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const isCtrl = event.ctrlKey || event.metaKey;
+      if (isCtrl && event.shiftKey && event.key === "F") {
+        event.preventDefault();
+        onToggle();
+      }
+    };
+
+    root.addEventListener("keydown", handleKeyDown);
+    return () => root.removeEventListener("keydown", handleKeyDown);
+  }, [editor, onToggle]);
+
+  // Toggle .focus-mode class on contenteditable and track active block
+  useEffect(() => {
+    const root = editor.getRootElement();
+    if (!root) return;
+
+    if (isActive) {
+      root.classList.add("focus-mode");
+    } else {
+      root.classList.remove("focus-mode");
+      // Clean up any focus-active classes
+      root.querySelectorAll(".focus-active").forEach((el) => {
+        el.classList.remove("focus-active");
+      });
+      return;
+    }
+
+    // Update active block on selection changes
+    const removeListener = editor.registerUpdateListener(({ editorState }) => {
+      editorState.read(() => {
+        const selection = $getSelection();
+        // Remove all existing focus-active classes
+        root.querySelectorAll(".focus-active").forEach((el) => {
+          el.classList.remove("focus-active");
+        });
+
+        if (!$isRangeSelection(selection)) return;
+
+        const anchorNode = selection.anchor.getNode();
+        const topLevelElement =
+          anchorNode.getKey() === "root"
+            ? null
+            : anchorNode.getTopLevelElementOrThrow();
+
+        if (topLevelElement) {
+          const dom = editor.getElementByKey(topLevelElement.getKey());
+          if (dom) {
+            dom.classList.add("focus-active");
+          }
+        }
+      });
+    });
+
+    return () => {
+      removeListener();
+      // Clean up on unmount
+      root.querySelectorAll(".focus-active").forEach((el) => {
+        el.classList.remove("focus-active");
+      });
+    };
+  }, [editor, isActive]);
 
   return null;
 }
@@ -1218,9 +1302,12 @@ const editorConfig = {
 };
 
 function Editor() {
+  const [isFocusMode, setIsFocusMode] = useState(false);
+  const toggleFocusMode = useCallback(() => setIsFocusMode((prev) => !prev), []);
+
   return (
     <LexicalComposer initialConfig={editorConfig}>
-      <ToolbarPlugin />
+      <ToolbarPlugin isFocusMode={isFocusMode} onToggleFocusMode={toggleFocusMode} />
       <div className="editor-shell">
         <div className="editor-content-area">
           <RichTextPlugin
@@ -1234,6 +1321,7 @@ function Editor() {
           <TablePlugin hasTabHandler={true} />
           <TabIndentationPlugin />
           <KeyboardShortcutsPlugin />
+          <FocusModePlugin isActive={isFocusMode} onToggle={toggleFocusMode} />
           <TableContextMenuPlugin />
           <SlashCommandPlugin />
           <SyncPlugin />

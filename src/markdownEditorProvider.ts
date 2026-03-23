@@ -476,6 +476,28 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
       font-size: 11px;
       opacity: 0.7;
     }
+    /* Focus mode: dim all top-level blocks except the active one */
+    .focus-mode > p,
+    .focus-mode > h1,
+    .focus-mode > h2,
+    .focus-mode > h3,
+    .focus-mode > h4,
+    .focus-mode > h5,
+    .focus-mode > h6,
+    .focus-mode > ul,
+    .focus-mode > ol,
+    .focus-mode > blockquote,
+    .focus-mode > pre,
+    .focus-mode > table,
+    .focus-mode > hr,
+    .focus-mode > span {
+      opacity: 0.25;
+      transition: opacity 0.2s ease;
+    }
+    .focus-mode > .focus-active {
+      opacity: 1;
+      transition: opacity 0.2s ease;
+    }
   </style>
 </head>
 <body>
