@@ -15,7 +15,7 @@ import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext
 import { HeadingNode, QuoteNode } from "@lexical/rich-text";
 import { ListNode, ListItemNode } from "@lexical/list";
 import { LinkNode, AutoLinkNode } from "@lexical/link";
-import { CodeNode, CodeHighlightNode } from "@lexical/code";
+import { CodeNode, CodeHighlightNode, registerCodeHighlighting } from "@lexical/code";
 import { HorizontalRuleNode } from "@lexical/react/LexicalHorizontalRuleNode";
 import {
   TableNode,
@@ -505,6 +505,22 @@ function KeyboardShortcutsPlugin() {
 
       if (!isCtrl) return;
 
+      // Don't fire markdown shortcuts inside code blocks
+      let insideCode = false;
+      editor.getEditorState().read(() => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) return;
+        let current: LexicalNode | null = selection.anchor.getNode();
+        while (current) {
+          if (current.getType() === "code") {
+            insideCode = true;
+            return;
+          }
+          current = current.getParent();
+        }
+      });
+      if (insideCode) return;
+
       // Ctrl+B — Bold
       if (event.key === "b" && !isShift) {
         event.preventDefault();
@@ -614,6 +630,106 @@ function KeyboardShortcutsPlugin() {
       root.addEventListener("keydown", handleKeyDown);
       return () => root.removeEventListener("keydown", handleKeyDown);
     }
+  }, [editor]);
+
+  return null;
+}
+
+// ── Code Highlight Plugin ────────────────────────────────────────
+
+function CodeHighlightPlugin() {
+  const [editor] = useLexicalComposerContext();
+
+  useEffect(() => {
+    return registerCodeHighlighting(editor);
+  }, [editor]);
+
+  return null;
+}
+
+// ── Code Block Behavior Plugin ──────────────────────────────────
+// Handles Tab→spaces, prevents backspace from deleting code block,
+// and blocks markdown shortcuts inside code blocks.
+
+function CodeBlockBehaviorPlugin() {
+  const [editor] = useLexicalComposerContext();
+
+  useEffect(() => {
+    const root = editor.getRootElement();
+    if (!root) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Check if cursor is inside a code block
+      let insideCode = false;
+      editor.getEditorState().read(() => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection)) return;
+        const node = selection.anchor.getNode();
+        let current: LexicalNode | null = node;
+        while (current) {
+          if (current.getType() === "code") {
+            insideCode = true;
+            return;
+          }
+          current = current.getParent();
+        }
+      });
+
+      if (!insideCode) return;
+
+      // Tab key: insert 2 spaces instead of changing focus
+      if (event.key === "Tab" && !event.ctrlKey && !event.metaKey) {
+        event.preventDefault();
+        editor.update(() => {
+          const selection = $getSelection();
+          if ($isRangeSelection(selection)) {
+            selection.insertRawText("  ");
+          }
+        });
+        return;
+      }
+
+      // Enter key: insert a newline (not a new paragraph)
+      if (event.key === "Enter" && !event.shiftKey && !event.ctrlKey && !event.metaKey) {
+        event.preventDefault();
+        editor.update(() => {
+          const selection = $getSelection();
+          if ($isRangeSelection(selection)) {
+            selection.insertRawText("\n");
+          }
+        });
+        return;
+      }
+
+      // Backspace at start of first line: prevent deleting the code block
+      if (event.key === "Backspace") {
+        editor.getEditorState().read(() => {
+          const selection = $getSelection();
+          if (!$isRangeSelection(selection) || !selection.isCollapsed()) return;
+          const anchor = selection.anchor;
+          const node = anchor.getNode();
+          // If at offset 0 of the first child of a code block, prevent deletion
+          if (anchor.offset === 0) {
+            let current: LexicalNode | null = node;
+            while (current) {
+              if (current.getType() === "code") {
+                const codeNode = current as ElementNode;
+                const firstChild = codeNode.getFirstChild();
+                // Check if the anchor node is the first child or is inside the first child
+                if (node === firstChild || node.getKey() === codeNode.getKey()) {
+                  event.preventDefault();
+                }
+                return;
+              }
+              current = current.getParent();
+            }
+          }
+        });
+      }
+    };
+
+    root.addEventListener("keydown", handleKeyDown);
+    return () => root.removeEventListener("keydown", handleKeyDown);
   }, [editor]);
 
   return null;
@@ -1514,6 +1630,39 @@ const editorConfig = {
       h5: "editor-h5",
       h6: "editor-h6",
     },
+    code: "editor-code-block",
+    codeHighlight: {
+      atrule: "editor-tokenAttr",
+      attr: "editor-tokenAttr",
+      boolean: "editor-tokenProperty",
+      builtin: "editor-tokenSelector",
+      cdata: "editor-tokenComment",
+      char: "editor-tokenSelector",
+      class: "editor-tokenFunction",
+      "class-name": "editor-tokenFunction",
+      comment: "editor-tokenComment",
+      constant: "editor-tokenProperty",
+      deleted: "editor-tokenProperty",
+      doctype: "editor-tokenComment",
+      entity: "editor-tokenOperator",
+      function: "editor-tokenFunction",
+      important: "editor-tokenVariable",
+      inserted: "editor-tokenSelector",
+      keyword: "editor-tokenAttr",
+      namespace: "editor-tokenVariable",
+      number: "editor-tokenProperty",
+      operator: "editor-tokenOperator",
+      prolog: "editor-tokenComment",
+      property: "editor-tokenProperty",
+      punctuation: "editor-tokenPunctuation",
+      regex: "editor-tokenVariable",
+      selector: "editor-tokenSelector",
+      string: "editor-tokenSelector",
+      symbol: "editor-tokenProperty",
+      tag: "editor-tokenProperty",
+      url: "editor-tokenOperator",
+      variable: "editor-tokenVariable",
+    },
     table: "editor-table",
     tableCell: "editor-table-cell",
     tableCellHeader: "editor-table-cell-header",
@@ -1559,6 +1708,8 @@ function Editor() {
           <TablePlugin hasTabHandler={true} />
           <TabIndentationPlugin />
           <KeyboardShortcutsPlugin />
+          <CodeHighlightPlugin />
+          <CodeBlockBehaviorPlugin />
           <FocusModePlugin isActive={isFocusMode} onToggle={toggleFocusMode} />
           <TableContextMenuPlugin />
           <SlashCommandPlugin />

@@ -206,27 +206,69 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
     [contenteditable] h6 { font-size: 0.9em; margin: 14px 0 4px; font-weight: 600; line-height: 1.4; color: var(--vscode-descriptionForeground, #999); }
     [contenteditable] strong { font-weight: bold; }
     [contenteditable] em { font-style: italic; }
-    [contenteditable] code {
+    [contenteditable] code,
+    [contenteditable] .editor-code {
       font-family: var(--vscode-editor-font-family, 'Cascadia Code', 'Fira Code', Consolas, monospace);
       font-size: 0.875em;
       background: var(--vscode-textCodeBlock-background, rgba(128, 128, 128, 0.15));
       padding: 2px 6px;
       border-radius: 3px;
     }
-    [contenteditable] pre {
+    /* Code block (Lexical CodeNode renders as <code> with theme class) */
+    [contenteditable] .editor-code-block {
+      display: block;
       background: var(--vscode-textCodeBlock-background, rgba(128, 128, 128, 0.15));
       padding: 16px 20px;
+      padding-top: 32px;
       border-radius: 6px;
       overflow-x: auto;
       margin: 16px 0;
       border: 1px solid var(--vscode-panel-border, rgba(128, 128, 128, 0.2));
-    }
-    [contenteditable] pre code {
-      background: none;
-      padding: 0;
+      font-family: var(--vscode-editor-font-family, 'Cascadia Code', 'Fira Code', Consolas, monospace);
       font-size: 0.9em;
       line-height: 1.5;
+      white-space: pre;
+      tab-size: 2;
+      position: relative;
     }
+    /* Language label */
+    [contenteditable] .editor-code-block[data-highlight-language]::before {
+      content: attr(data-highlight-language);
+      position: absolute;
+      top: 0;
+      right: 0;
+      padding: 2px 10px;
+      font-size: 11px;
+      font-family: var(--vscode-font-family, sans-serif);
+      color: var(--vscode-descriptionForeground, #999);
+      background: var(--vscode-panel-border, rgba(128, 128, 128, 0.2));
+      border-bottom-left-radius: 4px;
+      border-top-right-radius: 5px;
+      text-transform: lowercase;
+      user-select: none;
+      pointer-events: none;
+    }
+    /* Hide label for code blocks with no language */
+    [contenteditable] .editor-code-block[data-highlight-language=""]::before {
+      display: none;
+    }
+    /* Prevent rich text formatting display inside code blocks */
+    [contenteditable] .editor-code-block strong,
+    [contenteditable] .editor-code-block em,
+    [contenteditable] .editor-code-block .editor-bold,
+    [contenteditable] .editor-code-block .editor-italic {
+      font-weight: normal;
+      font-style: normal;
+    }
+    /* Syntax highlighting token colors */
+    .editor-tokenComment { color: var(--vscode-editorLineNumber-foreground, #6a9955); }
+    .editor-tokenPunctuation { color: var(--vscode-editor-foreground, #d4d4d4); }
+    .editor-tokenProperty { color: #b5cea8; }
+    .editor-tokenSelector { color: #ce9178; }
+    .editor-tokenOperator { color: var(--vscode-editor-foreground, #d4d4d4); }
+    .editor-tokenAttr { color: #569cd6; }
+    .editor-tokenVariable { color: #9cdcfe; }
+    .editor-tokenFunction { color: #dcdcaa; }
     [contenteditable] blockquote {
       border-left: 4px solid var(--vscode-textBlockQuote-border, #007acc);
       padding: 4px 16px;
