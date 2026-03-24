@@ -27,6 +27,11 @@
         {
           "id": "mdExplorerFiles",
           "name": "Markdown Files"
+        },
+        {
+          "id": "mdExplorerBacklinks",
+          "name": "Backlinks",
+          "when": "mdExplorer.hasBacklinksTarget"
         }
       ]
     },
@@ -79,6 +84,12 @@
         "command": "mdExplorer.openFile",
         "title": "Open File",
         "category": "Markdown Explorer"
+      },
+      {
+        "command": "mdExplorer.refreshBacklinks",
+        "title": "Refresh Backlinks",
+        "icon": "$(refresh)",
+        "category": "Markdown Explorer"
       }
     ],
     "customEditors": [
@@ -95,6 +106,11 @@
     ],
     "menus": {
       "view/title": [
+        {
+          "command": "mdExplorer.refreshBacklinks",
+          "when": "view == mdExplorerBacklinks",
+          "group": "navigation@1"
+        },
         {
           "command": "mdExplorer.newFile",
           "when": "view == mdExplorerFiles",

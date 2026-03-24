@@ -3,9 +3,11 @@ import * as path from "path";
 import * as fs from "fs";
 import { ExplorerTreeProvider, FileItem } from "./explorerViewProvider";
 import { MarkdownEditorProvider } from "./markdownEditorProvider";
+import { BacklinksProvider } from "./backlinksProvider";
 
 export function activate(context: vscode.ExtensionContext) {
   const treeProvider = new ExplorerTreeProvider();
+  const backlinksProvider = new BacklinksProvider();
 
   // Register the custom markdown editor
   context.subscriptions.push(MarkdownEditorProvider.register(context));
@@ -17,19 +19,67 @@ export function activate(context: vscode.ExtensionContext) {
   });
   context.subscriptions.push(treeView);
 
+  // Register backlinks tree view
+  const backlinksView = vscode.window.createTreeView("mdExplorerBacklinks", {
+    treeDataProvider: backlinksProvider,
+    showCollapseAll: true,
+  });
+  context.subscriptions.push(backlinksView);
+
   // Set initial context
   vscode.commands.executeCommand("setContext", "mdExplorer.mdOnly", true);
+
+  // Track active editor for backlinks
+  const updateBacklinksTarget = () => {
+    const editor = vscode.window.activeTextEditor;
+    const filePath = editor?.document.uri.fsPath;
+    const isMd = filePath?.endsWith(".md");
+    vscode.commands.executeCommand("setContext", "mdExplorer.hasBacklinksTarget", !!isMd);
+    backlinksProvider.setCurrentFile(isMd ? filePath : undefined);
+  };
+  context.subscriptions.push(
+    vscode.window.onDidChangeActiveTextEditor(updateBacklinksTarget),
+  );
+  // Also listen for custom editor tab changes
+  context.subscriptions.push(
+    vscode.window.tabGroups.onDidChangeTabs(() => {
+      const activeTab = vscode.window.tabGroups.activeTabGroup.activeTab;
+      if (activeTab?.input && typeof activeTab.input === "object" && "uri" in activeTab.input) {
+        const uri = (activeTab.input as { uri: vscode.Uri }).uri;
+        if (uri.fsPath.endsWith(".md")) {
+          vscode.commands.executeCommand("setContext", "mdExplorer.hasBacklinksTarget", true);
+          backlinksProvider.setCurrentFile(uri.fsPath);
+          return;
+        }
+      }
+      updateBacklinksTarget();
+    }),
+  );
+  // Set initial target
+  updateBacklinksTarget();
 
   // File system watcher with debounce
   let refreshTimeout: ReturnType<typeof setTimeout> | undefined;
   const debouncedRefresh = () => {
     if (refreshTimeout) clearTimeout(refreshTimeout);
-    refreshTimeout = setTimeout(() => treeProvider.refresh(), 300);
+    refreshTimeout = setTimeout(() => {
+      treeProvider.refresh();
+      backlinksProvider.refresh();
+    }, 300);
+  };
+
+  let backlinksFileListTimeout: ReturnType<typeof setTimeout> | undefined;
+  const debouncedBacklinksFileList = () => {
+    if (backlinksFileListTimeout) clearTimeout(backlinksFileListTimeout);
+    backlinksFileListTimeout = setTimeout(() => {
+      backlinksProvider.invalidateFileList();
+      backlinksProvider.refresh();
+    }, 500);
   };
 
   const mdWatcher = vscode.workspace.createFileSystemWatcher("**/*.md");
-  mdWatcher.onDidCreate(debouncedRefresh);
-  mdWatcher.onDidDelete(debouncedRefresh);
+  mdWatcher.onDidCreate(() => { debouncedRefresh(); debouncedBacklinksFileList(); });
+  mdWatcher.onDidDelete(() => { debouncedRefresh(); debouncedBacklinksFileList(); });
   mdWatcher.onDidChange(debouncedRefresh);
 
   // Also watch for folder changes (any file create/delete triggers folder refresh)
@@ -44,6 +94,11 @@ export function activate(context: vscode.ExtensionContext) {
 
     vscode.commands.registerCommand("mdExplorer.refresh", () => {
       treeProvider.refresh();
+    }),
+
+    vscode.commands.registerCommand("mdExplorer.refreshBacklinks", () => {
+      backlinksProvider.invalidateFileList();
+      backlinksProvider.refresh();
     }),
 
     vscode.commands.registerCommand("mdExplorer.toggleMdOnly", () => {
