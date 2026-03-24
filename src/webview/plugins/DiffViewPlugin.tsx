@@ -6,7 +6,7 @@
  * with VS Code-style diff colors (green additions, red deletions).
  */
 import React, { useEffect, useState, useRef, useCallback } from "react";
-import { diffLines, Change } from "diff";
+import { diffLines } from "diff";
 
 interface DiffViewPluginProps {
   isActive: boolean;

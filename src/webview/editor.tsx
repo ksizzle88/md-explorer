@@ -7,7 +7,7 @@
  * - Our custom markdown transformers (table pipe escaping, image balanced parens)
  * - DiffView and SourceMode from our original code
  */
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef } from "react";
 import { createRoot } from "react-dom/client";
 
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";

@@ -32,10 +32,7 @@ import {
 } from "@lexical/list";
 import { INSERT_HORIZONTAL_RULE_COMMAND } from "@lexical/react/LexicalHorizontalRuleNode";
 import { $isLinkNode, TOGGLE_LINK_COMMAND } from "@lexical/link";
-import {
-  $createTableNodeWithDimensions,
-  $isTableNode,
-} from "@lexical/table";
+import { $createTableNodeWithDimensions } from "@lexical/table";
 import { $createImageNode } from "../ImageNode";
 
 // ── Dropdown Component ──────────────────────────────────────────

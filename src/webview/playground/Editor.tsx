@@ -20,9 +20,8 @@ import {
 } from '@lexical/link';
 import {CheckListExtension, ListExtension} from '@lexical/list';
 import {CharacterLimitPlugin} from '@lexical/react/LexicalCharacterLimitPlugin';
-// Collaboration stubs for VS Code
+// Collaboration stub for VS Code
 const CollaborationPlugin = (_props: any) => null;
-const CollaborationPluginV2__EXPERIMENTAL = (_props: any) => null;
 import {useLexicalComposerContext} from '@lexical/react/LexicalComposerContext';
 import {TabIndentationPlugin} from '@lexical/react/LexicalTabIndentationPlugin';
 import {TablePlugin} from '@lexical/react/LexicalTablePlugin';
@@ -30,7 +29,7 @@ import {useOptionalExtensionDependency} from '@lexical/react/useExtensionCompone
 import {useLexicalEditable} from '@lexical/react/useLexicalEditable';
 import {CAN_USE_DOM} from '@lexical/utils';
 import {OutputExtension} from 'lexical';
-import {useEffect, useMemo, useState} from 'react';
+import {useEffect, useState} from 'react';
 import {
   createWebsocketProvider,
   createWebsocketProviderWithDoc,
